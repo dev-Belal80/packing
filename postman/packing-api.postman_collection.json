@@ -1,0 +1,1705 @@
+{
+  "info": {
+    "name": "Packing API (Local)",
+    "_postman_id": "9c6c5d2f-3c3f-4d48-b39f-9df3a6b74d5a",
+    "description": "Laravel API for Packing stations (local dev). Includes Sanctum SPA-cookie flow and Bearer-token flow.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "api_base", "value": "http://127.0.0.1:8000" },
+    { "key": "frontend_origin", "value": "http://127.0.0.1:3000" },
+
+    { "key": "email", "value": "superadmin@example.com" },
+    { "key": "password", "value": "password" },
+    { "key": "device_name", "value": "postman" },
+
+    { "key": "XSRF_TOKEN", "value": "" },
+    { "key": "BEARER_TOKEN", "value": "" },
+
+    { "key": "TENANT_ID", "value": "" },
+    { "key": "STATION_ADMIN_EMAIL", "value": "" },
+    { "key": "STATION_ADMIN_PASSWORD", "value": "" },
+    { "key": "STATION_ADMIN_TOKEN", "value": "" },
+
+    { "key": "packhouse_id", "value": "" },
+    { "key": "contact_id", "value": "" },
+    { "key": "raw_material_type_id", "value": "" },
+    { "key": "pallet_type_id", "value": "" },
+    { "key": "product_id", "value": "" },
+    { "key": "job_title_id", "value": "" },
+    { "key": "production_line_id", "value": "" },
+    { "key": "gate_inquiry_id", "value": "" },
+    { "key": "raw_receipt_id", "value": "" },
+    { "key": "scale_note_id", "value": "" },
+    { "key": "order_id", "value": "" },
+    { "key": "sort_record_id", "value": "" },
+    { "key": "pallet_id", "value": "" },
+    { "key": "shipping_policy_id", "value": "" },
+    { "key": "attendance_id", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "SPA Cookie Auth (Sanctum)",
+      "item": [
+        {
+          "name": "Get CSRF Cookie (Sanctum)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const xsrf = pm.cookies.get('XSRF-TOKEN');",
+                  "if (xsrf) {",
+                  "  pm.collectionVariables.set('XSRF_TOKEN', decodeURIComponent(xsrf));",
+                  "}",
+                  "pm.test('CSRF cookie received', function () {",
+                  "  pm.expect(xsrf).to.be.ok;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Origin", "value": "{{frontend_origin}}" },
+              { "key": "Referer", "value": "{{frontend_origin}}/" }
+            ],
+            "url": {
+              "raw": "{{api_base}}/sanctum/csrf-cookie",
+              "host": ["{{api_base}}"],
+              "path": ["sanctum", "csrf-cookie"]
+            }
+          }
+        },
+        {
+          "name": "Auth - Login (Session Cookie)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const token = pm.collectionVariables.get('XSRF_TOKEN');",
+                  "if (token) {",
+                  "  pm.request.headers.upsert({ key: 'X-XSRF-TOKEN', value: token });",
+                  "}",
+                  "pm.request.headers.upsert({ key: 'X-Requested-With', value: 'XMLHttpRequest' });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Origin", "value": "{{frontend_origin}}" },
+              { "key": "Referer", "value": "{{frontend_origin}}/" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}"
+            },
+            "url": {
+              "raw": "{{api_base}}/api/auth/login",
+              "host": ["{{api_base}}"],
+              "path": ["api", "auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Auth - Me (Session Cookie)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Origin", "value": "{{frontend_origin}}" },
+              { "key": "Referer", "value": "{{frontend_origin}}/" }
+            ],
+            "url": {
+              "raw": "{{api_base}}/api/auth/me",
+              "host": ["{{api_base}}"],
+              "path": ["api", "auth", "me"]
+            }
+          }
+        },
+        {
+          "name": "Auth - Logout (Session Cookie)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const token = pm.collectionVariables.get('XSRF_TOKEN');",
+                  "if (token) {",
+                  "  pm.request.headers.upsert({ key: 'X-XSRF-TOKEN', value: token });",
+                  "}",
+                  "pm.request.headers.upsert({ key: 'X-Requested-With', value: 'XMLHttpRequest' });"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Origin", "value": "{{frontend_origin}}" },
+              { "key": "Referer", "value": "{{frontend_origin}}/" }
+            ],
+            "url": {
+              "raw": "{{api_base}}/api/auth/logout",
+              "host": ["{{api_base}}"],
+              "path": ["api", "auth", "logout"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Bearer Token Auth (Sanctum tokens)",
+      "item": [
+        {
+          "name": "Auth - Token Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Login success', function () {",
+                  "  pm.expect(pm.response.code).to.be.oneOf([200,201]);",
+                  "});",
+                  "const json = pm.response.json();",
+                  "if (json && json.token) {",
+                  "  pm.collectionVariables.set('BEARER_TOKEN', json.token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\",\n  \"device_name\": \"{{device_name}}\"\n}"
+            },
+            "url": {
+              "raw": "{{api_base}}/api/auth/token",
+              "host": ["{{api_base}}"],
+              "path": ["api", "auth", "token"]
+            }
+          }
+        },
+        {
+          "name": "Auth - Me (Bearer)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{BEARER_TOKEN}}" }
+            ],
+            "url": {
+              "raw": "{{api_base}}/api/auth/me",
+              "host": ["{{api_base}}"],
+              "path": ["api", "auth", "me"]
+            }
+          }
+        },
+        {
+          "name": "Super - Create Tenant + Station Admin",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Tenant created', function () {",
+                  "  pm.expect(pm.response.code).to.equal(201);",
+                  "});",
+                  "const json = pm.response.json();",
+                  "if (json && json.tenant && json.tenant.id) {",
+                  "  pm.collectionVariables.set('TENANT_ID', json.tenant.id);",
+                  "}",
+                  "if (json && json.admin_user && json.admin_user.email) {",
+                  "  pm.collectionVariables.set('STATION_ADMIN_EMAIL', json.admin_user.email);",
+                  "}",
+                  "if (json && json.admin_plain_password) {",
+                  "  pm.collectionVariables.set('STATION_ADMIN_PASSWORD', json.admin_plain_password);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{BEARER_TOKEN}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tenant\": {\n    \"name\": \"Station A\",\n    \"location\": \"Local\",\n    \"plan\": \"trial\",\n    \"max_users\": 10\n  },\n  \"admin\": {\n    \"name\": \"Station Admin\",\n    \"email\": \"admin.stationa@example.com\",\n    \"password\": \"password1234\"\n  }\n}"
+            },
+            "url": {
+              "raw": "{{api_base}}/api/super/tenants",
+              "host": ["{{api_base}}"],
+              "path": ["api", "super", "tenants"]
+            }
+          }
+        },
+        {
+          "name": "Auth - Token Login (Station Admin)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json && json.token) {",
+                  "  pm.collectionVariables.set('STATION_ADMIN_TOKEN', json.token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{STATION_ADMIN_EMAIL}}\",\n  \"password\": \"{{STATION_ADMIN_PASSWORD}}\",\n  \"device_name\": \"station-admin\"\n}"
+            },
+            "url": {
+              "raw": "{{api_base}}/api/auth/token",
+              "host": ["{{api_base}}"],
+              "path": ["api", "auth", "token"]
+            }
+          }
+        },
+        {
+          "name": "Station - Create User (role inside tenant)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{STATION_ADMIN_TOKEN}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Reception 1\",\n  \"email\": \"reception1@example.com\",\n  \"password\": \"password1234\",\n  \"role\": \"reception\"\n}"
+            },
+            "url": {
+              "raw": "{{api_base}}/api/station/users",
+              "host": ["{{api_base}}"],
+              "path": ["api", "station", "users"]
+            }
+          }
+        },
+        {
+          "name": "Auth - Token Logout (revoke current token)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{BEARER_TOKEN}}" }
+            ],
+            "url": {
+              "raw": "{{api_base}}/api/auth/token/logout",
+              "host": ["{{api_base}}"],
+              "path": ["api", "auth", "token", "logout"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "API Health",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "url": {
+              "raw": "{{api_base}}/api/health",
+              "host": ["{{api_base}}"],
+              "path": ["api", "health"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Export",
+      "item": [
+        {
+          "name": "List Pallets",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{BEARER_TOKEN}}", "type": "string" }
+              ]
+            },
+            "url": {
+              "raw": "{{api_base}}/api/export/pallets",
+              "host": ["{{api_base}}"],
+              "path": ["api", "export", "pallets"]
+            }
+          }
+        },
+        {
+          "name": "Create Pallet",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{BEARER_TOKEN}}", "type": "string" }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"packhouse_id\": \"{{packhouse_id}}\",\n  \"pallet_type_id\": \"{{pallet_type_id}}\",\n  \"product_id\": \"{{product_id}}\",\n  \"sort_record_id\": \"{{sort_record_id}}\",\n  \"grade\": \"A\",\n  \"cartons_count\": 24,\n  \"total_weight_kg\": 480.000,\n  \"status\": \"building\"\n}"
+            },
+            "url": {
+              "raw": "{{api_base}}/api/export/pallets",
+              "host": ["{{api_base}}"],
+              "path": ["api", "export", "pallets"]
+            }
+          }
+        },
+        {
+          "name": "Show Pallet",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{BEARER_TOKEN}}", "type": "string" }
+              ]
+            },
+            "url": {
+              "raw": "{{api_base}}/api/export/pallets/{{pallet_id}}",
+              "host": ["{{api_base}}"],
+              "path": ["api", "export", "pallets", "{{pallet_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Pallet",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{BEARER_TOKEN}}", "type": "string" }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"grade\": \"A\",\n  \"cartons_count\": 30,\n  \"total_weight_kg\": 600.000,\n  \"status\": \"building\"\n}"
+            },
+            "url": {
+              "raw": "{{api_base}}/api/export/pallets/{{pallet_id}}",
+              "host": ["{{api_base}}"],
+              "path": ["api", "export", "pallets", "{{pallet_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Pallet",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{BEARER_TOKEN}}", "type": "string" }
+              ]
+            },
+            "url": {
+              "raw": "{{api_base}}/api/export/pallets/{{pallet_id}}",
+              "host": ["{{api_base}}"],
+              "path": ["api", "export", "pallets", "{{pallet_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Confirm Pallet Receipt",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{BEARER_TOKEN}}", "type": "string" }
+              ]
+            },
+            "url": {
+              "raw": "{{api_base}}/api/export/pallets/{{pallet_id}}/confirm-receipt",
+              "host": ["{{api_base}}"],
+              "path": ["api", "export", "pallets", "{{pallet_id}}", "confirm-receipt"]
+            }
+          }
+        },
+        {
+          "name": "Start Pallet Cooling",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{BEARER_TOKEN}}", "type": "string" }
+              ]
+            },
+            "url": {
+              "raw": "{{api_base}}/api/export/pallets/{{pallet_id}}/cooling",
+              "host": ["{{api_base}}"],
+              "path": ["api", "export", "pallets", "{{pallet_id}}", "cooling"]
+            }
+          }
+        },
+        {
+          "name": "List Shipping Policies",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{BEARER_TOKEN}}", "type": "string" }
+              ]
+            },
+            "url": {
+              "raw": "{{api_base}}/api/export/shipping-policies",
+              "host": ["{{api_base}}"],
+              "path": ["api", "export", "shipping-policies"]
+            }
+          }
+        },
+        {
+          "name": "Create Shipping Policy",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{BEARER_TOKEN}}", "type": "string" }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"packhouse_id\": \"{{packhouse_id}}\",\n  \"importer_contact_id\": \"{{contact_id}}\",\n  \"destination_country\": \"UK\",\n  \"container_number\": \"MSKU1234567\",\n  \"vessel_name\": \"Atlantic Star\",\n  \"shipping_date\": \"2026-05-02\",\n  \"status\": \"draft\"\n}"
+            },
+            "url": {
+              "raw": "{{api_base}}/api/export/shipping-policies",
+              "host": ["{{api_base}}"],
+              "path": ["api", "export", "shipping-policies"]
+            }
+          }
+        },
+        {
+          "name": "Show Shipping Policy",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{BEARER_TOKEN}}", "type": "string" }
+              ]
+            },
+            "url": {
+              "raw": "{{api_base}}/api/export/shipping-policies/{{shipping_policy_id}}",
+              "host": ["{{api_base}}"],
+              "path": ["api", "export", "shipping-policies", "{{shipping_policy_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Shipping Policy",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{BEARER_TOKEN}}", "type": "string" }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"destination_country\": \"UK\",\n  \"container_number\": \"MSKU1234567\",\n  \"vessel_name\": \"Atlantic Star\",\n  \"shipping_date\": \"2026-05-03\",\n  \"status\": \"draft\"\n}"
+            },
+            "url": {
+              "raw": "{{api_base}}/api/export/shipping-policies/{{shipping_policy_id}}",
+              "host": ["{{api_base}}"],
+              "path": ["api", "export", "shipping-policies", "{{shipping_policy_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Shipping Policy",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{BEARER_TOKEN}}", "type": "string" }
+              ]
+            },
+            "url": {
+              "raw": "{{api_base}}/api/export/shipping-policies/{{shipping_policy_id}}",
+              "host": ["{{api_base}}"],
+              "path": ["api", "export", "shipping-policies", "{{shipping_policy_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Approve Shipping Policy",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{BEARER_TOKEN}}", "type": "string" }
+              ]
+            },
+            "url": {
+              "raw": "{{api_base}}/api/export/shipping-policies/{{shipping_policy_id}}/approve",
+              "host": ["{{api_base}}"],
+              "path": ["api", "export", "shipping-policies", "{{shipping_policy_id}}", "approve"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Production",
+      "item": [
+        {
+          "name": "List Attendance",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{BEARER_TOKEN}}", "type": "string" }
+              ]
+            },
+            "url": {
+              "raw": "{{api_base}}/api/production/attendance",
+              "host": ["{{api_base}}"],
+              "path": ["api", "production", "attendance"]
+            }
+          }
+        },
+        {
+          "name": "Create Attendance",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{BEARER_TOKEN}}", "type": "string" }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"packhouse_id\": \"{{packhouse_id}}\",\n  \"employee_name\": \"John Doe\",\n  \"job_title_id\": \"{{job_title_id}}\",\n  \"attendance_date\": \"2026-05-02\",\n  \"check_in\": \"08:00:00\",\n  \"hours_worked\": 8,\n  \"calculated_wage\": 0,\n  \"is_present\": true\n}"
+            },
+            "url": {
+              "raw": "{{api_base}}/api/production/attendance",
+              "host": ["{{api_base}}"],
+              "path": ["api", "production", "attendance"]
+            }
+          }
+        },
+        {
+          "name": "Show Attendance",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{BEARER_TOKEN}}", "type": "string" }
+              ]
+            },
+            "url": {
+              "raw": "{{api_base}}/api/production/attendance/{{attendance_id}}",
+              "host": ["{{api_base}}"],
+              "path": ["api", "production", "attendance", "{{attendance_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Attendance",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{BEARER_TOKEN}}", "type": "string" }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"hours_worked\": 8.5,\n  \"calculated_wage\": 0,\n  \"is_present\": true\n}"
+            },
+            "url": {
+              "raw": "{{api_base}}/api/production/attendance/{{attendance_id}}",
+              "host": ["{{api_base}}"],
+              "path": ["api", "production", "attendance", "{{attendance_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Attendance",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{BEARER_TOKEN}}", "type": "string" }
+              ]
+            },
+            "url": {
+              "raw": "{{api_base}}/api/production/attendance/{{attendance_id}}",
+              "host": ["{{api_base}}"],
+              "path": ["api", "production", "attendance", "{{attendance_id}}"]
+            }
+          }
+        },
+        {
+          "name": "List Production Orders",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{BEARER_TOKEN}}", "type": "string" }
+              ]
+            },
+            "url": {
+              "raw": "{{api_base}}/api/production/orders",
+              "host": ["{{api_base}}"],
+              "path": ["api", "production", "orders"]
+            }
+          }
+        },
+        {
+          "name": "Create Production Order",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{BEARER_TOKEN}}", "type": "string" }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"packhouse_id\": \"{{packhouse_id}}\",\n  \"raw_receipt_id\": \"{{raw_receipt_id}}\",\n  \"product_id\": \"{{product_id}}\",\n  \"production_line_id\": \"{{production_line_id}}\",\n  \"production_stage_id\": 1,\n  \"supervisor_id\": 1,\n  \"target_qty_kg\": 1000,\n  \"actual_input_kg\": 0,\n  \"order_type\": \"own\",\n  \"status\": \"draft\"\n}"
+            },
+            "url": {
+              "raw": "{{api_base}}/api/production/orders",
+              "host": ["{{api_base}}"],
+              "path": ["api", "production", "orders"]
+            }
+          }
+        },
+        {
+          "name": "Show Production Order",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{BEARER_TOKEN}}", "type": "string" }
+              ]
+            },
+            "url": {
+              "raw": "{{api_base}}/api/production/orders/{{order_id}}",
+              "host": ["{{api_base}}"],
+              "path": ["api", "production", "orders", "{{order_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Production Order",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{BEARER_TOKEN}}", "type": "string" }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"target_qty_kg\": 1200,\n  \"actual_input_kg\": 100,\n  \"status\": \"draft\"\n}"
+            },
+            "url": {
+              "raw": "{{api_base}}/api/production/orders/{{order_id}}",
+              "host": ["{{api_base}}"],
+              "path": ["api", "production", "orders", "{{order_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Production Order",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{BEARER_TOKEN}}", "type": "string" }
+              ]
+            },
+            "url": {
+              "raw": "{{api_base}}/api/production/orders/{{order_id}}",
+              "host": ["{{api_base}}"],
+              "path": ["api", "production", "orders", "{{order_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Pause Production Order",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{BEARER_TOKEN}}", "type": "string" }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pause_reason\": \"Waiting on materials\"\n}"
+            },
+            "url": {
+              "raw": "{{api_base}}/api/production/orders/{{order_id}}/pause",
+              "host": ["{{api_base}}"],
+              "path": ["api", "production", "orders", "{{order_id}}", "pause"]
+            }
+          }
+        },
+        {
+          "name": "Dispatch Production Order",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{BEARER_TOKEN}}", "type": "string" }
+              ]
+            },
+            "url": {
+              "raw": "{{api_base}}/api/production/orders/{{order_id}}/dispatch",
+              "host": ["{{api_base}}"],
+              "path": ["api", "production", "orders", "{{order_id}}", "dispatch"]
+            }
+          }
+        },
+        {
+          "name": "Cancel Production Order",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{BEARER_TOKEN}}", "type": "string" }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"cancel_reason\": \"Order cancelled in test\"\n}"
+            },
+            "url": {
+              "raw": "{{api_base}}/api/production/orders/{{order_id}}/cancel",
+              "host": ["{{api_base}}"],
+              "path": ["api", "production", "orders", "{{order_id}}", "cancel"]
+            }
+          }
+        },
+        {
+          "name": "List Sort Records",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{BEARER_TOKEN}}", "type": "string" }
+              ]
+            },
+            "url": {
+              "raw": "{{api_base}}/api/production/sort-records",
+              "host": ["{{api_base}}"],
+              "path": ["api", "production", "sort-records"]
+            }
+          }
+        },
+        {
+          "name": "Create Sort Record",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{BEARER_TOKEN}}", "type": "string" }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"packhouse_id\": \"{{packhouse_id}}\",\n  \"production_order_id\": \"{{order_id}}\",\n  \"grade\": \"A\",\n  \"input_kg\": 1000,\n  \"sorted_kg\": 920,\n  \"status\": \"pending\"\n}"
+            },
+            "url": {
+              "raw": "{{api_base}}/api/production/sort-records",
+              "host": ["{{api_base}}"],
+              "path": ["api", "production", "sort-records"]
+            }
+          }
+        },
+        {
+          "name": "Show Sort Record",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{BEARER_TOKEN}}", "type": "string" }
+              ]
+            },
+            "url": {
+              "raw": "{{api_base}}/api/production/sort-records/{{sort_record_id}}",
+              "host": ["{{api_base}}"],
+              "path": ["api", "production", "sort-records", "{{sort_record_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Sort Record",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{BEARER_TOKEN}}", "type": "string" }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"grade\": \"A\",\n  \"input_kg\": 1000,\n  \"sorted_kg\": 930,\n  \"status\": \"pending\"\n}"
+            },
+            "url": {
+              "raw": "{{api_base}}/api/production/sort-records/{{sort_record_id}}",
+              "host": ["{{api_base}}"],
+              "path": ["api", "production", "sort-records", "{{sort_record_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Sort Record",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{BEARER_TOKEN}}", "type": "string" }
+              ]
+            },
+            "url": {
+              "raw": "{{api_base}}/api/production/sort-records/{{sort_record_id}}",
+              "host": ["{{api_base}}"],
+              "path": ["api", "production", "sort-records", "{{sort_record_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reception",
+      "item": [
+        {
+          "name": "List Gate Inquiries",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{BEARER_TOKEN}}", "type": "string" }
+              ]
+            },
+            "url": {
+              "raw": "{{api_base}}/api/reception/gate-inquiries",
+              "host": ["{{api_base}}"],
+              "path": ["api", "reception", "gate-inquiries"]
+            }
+          }
+        },
+        {
+          "name": "Create Gate Inquiry",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{BEARER_TOKEN}}", "type": "string" }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"packhouse_id\": \"{{packhouse_id}}\",\n  \"vehicle_number\": \"ABC-123\",\n  \"driver_name\": \"Driver Name\",\n  \"contact_id\": \"{{contact_id}}\",\n  \"raw_material_type_id\": \"{{raw_material_type_id}}\",\n  \"expected_qty\": 500,\n  \"status\": \"pending\"\n}"
+            },
+            "url": {
+              "raw": "{{api_base}}/api/reception/gate-inquiries",
+              "host": ["{{api_base}}"],
+              "path": ["api", "reception", "gate-inquiries"]
+            }
+          }
+        },
+        {
+          "name": "Show Gate Inquiry",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{BEARER_TOKEN}}", "type": "string" }
+              ]
+            },
+            "url": {
+              "raw": "{{api_base}}/api/reception/gate-inquiries/{{gate_inquiry_id}}",
+              "host": ["{{api_base}}"],
+              "path": ["api", "reception", "gate-inquiries", "{{gate_inquiry_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Gate Inquiry",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{BEARER_TOKEN}}", "type": "string" }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"vehicle_number\": \"ABC-123\",\n  \"driver_name\": \"Driver Name\",\n  \"expected_qty\": 500,\n  \"status\": \"pending\"\n}"
+            },
+            "url": {
+              "raw": "{{api_base}}/api/reception/gate-inquiries/{{gate_inquiry_id}}",
+              "host": ["{{api_base}}"],
+              "path": ["api", "reception", "gate-inquiries", "{{gate_inquiry_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Gate Inquiry",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{BEARER_TOKEN}}", "type": "string" }
+              ]
+            },
+            "url": {
+              "raw": "{{api_base}}/api/reception/gate-inquiries/{{gate_inquiry_id}}",
+              "host": ["{{api_base}}"],
+              "path": ["api", "reception", "gate-inquiries", "{{gate_inquiry_id}}"]
+            }
+          }
+        },
+        {
+          "name": "List Raw Receipts",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{BEARER_TOKEN}}", "type": "string" }
+              ]
+            },
+            "url": {
+              "raw": "{{api_base}}/api/reception/raw-receipts",
+              "host": ["{{api_base}}"],
+              "path": ["api", "reception", "raw-receipts"]
+            }
+          }
+        },
+        {
+          "name": "Create Raw Receipt",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{BEARER_TOKEN}}", "type": "string" }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"packhouse_id\": \"{{packhouse_id}}\",\n  \"contact_id\": \"{{contact_id}}\",\n  \"contact_role\": \"supplier\",\n  \"raw_material_type_id\": \"{{raw_material_type_id}}\",\n  \"gate_inquiry_id\": \"{{gate_inquiry_id}}\",\n  \"scale_note_id\": \"{{scale_note_id}}\",\n  \"boxes_count\": 25,\n  \"quantity_kg\": 500.000,\n  \"quality_result\": \"pass\",\n  \"quality_notes\": \"Example receipt\",\n  \"is_partial\": false,\n  \"has_weight_dispute\": false,\n  \"transport_cost\": 0,\n  \"status\": \"pending\",\n  \"approval_status\": \"pending\"\n}"
+            },
+            "url": {
+              "raw": "{{api_base}}/api/reception/raw-receipts",
+              "host": ["{{api_base}}"],
+              "path": ["api", "reception", "raw-receipts"]
+            }
+          }
+        },
+        {
+          "name": "Show Raw Receipt",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{BEARER_TOKEN}}", "type": "string" }
+              ]
+            },
+            "url": {
+              "raw": "{{api_base}}/api/reception/raw-receipts/{{raw_receipt_id}}",
+              "host": ["{{api_base}}"],
+              "path": ["api", "reception", "raw-receipts", "{{raw_receipt_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Raw Receipt",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{BEARER_TOKEN}}", "type": "string" }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"boxes_count\": 25,\n  \"quantity_kg\": 500.000,\n  \"quality_result\": \"pass\",\n  \"quality_notes\": \"Updated example receipt\",\n  \"is_partial\": false,\n  \"has_weight_dispute\": false,\n  \"transport_cost\": 0,\n  \"approval_status\": \"pending\"\n}"
+            },
+            "url": {
+              "raw": "{{api_base}}/api/reception/raw-receipts/{{raw_receipt_id}}",
+              "host": ["{{api_base}}"],
+              "path": ["api", "reception", "raw-receipts", "{{raw_receipt_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Raw Receipt",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{BEARER_TOKEN}}", "type": "string" }
+              ]
+            },
+            "url": {
+              "raw": "{{api_base}}/api/reception/raw-receipts/{{raw_receipt_id}}",
+              "host": ["{{api_base}}"],
+              "path": ["api", "reception", "raw-receipts", "{{raw_receipt_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Approve Raw Receipt",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{BEARER_TOKEN}}", "type": "string" }
+              ]
+            },
+            "url": {
+              "raw": "{{api_base}}/api/reception/raw-receipts/{{raw_receipt_id}}/approve",
+              "host": ["{{api_base}}"],
+              "path": ["api", "reception", "raw-receipts", "{{raw_receipt_id}}", "approve"]
+            }
+          }
+        },
+        {
+          "name": "List Scale Notes",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{BEARER_TOKEN}}", "type": "string" }
+              ]
+            },
+            "url": {
+              "raw": "{{api_base}}/api/reception/scale-notes",
+              "host": ["{{api_base}}"],
+              "path": ["api", "reception", "scale-notes"]
+            }
+          }
+        },
+        {
+          "name": "Create Scale Note",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{BEARER_TOKEN}}", "type": "string" }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"gate_inquiry_id\": \"{{gate_inquiry_id}}\",\n  \"gross_weight\": 550.000,\n  \"tare_weight\": 50.000,\n  \"net_weight\": 500.000,\n  \"is_manual\": false\n}"
+            },
+            "url": {
+              "raw": "{{api_base}}/api/reception/scale-notes",
+              "host": ["{{api_base}}"],
+              "path": ["api", "reception", "scale-notes"]
+            }
+          }
+        },
+        {
+          "name": "Show Scale Note",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{BEARER_TOKEN}}", "type": "string" }
+              ]
+            },
+            "url": {
+              "raw": "{{api_base}}/api/reception/scale-notes/{{scale_note_id}}",
+              "host": ["{{api_base}}"],
+              "path": ["api", "reception", "scale-notes", "{{scale_note_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Scale Note",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{BEARER_TOKEN}}", "type": "string" }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"gross_weight\": 550.000,\n  \"tare_weight\": 50.000,\n  \"net_weight\": 500.000,\n  \"is_manual\": true,\n  \"manual_reason\": \"Example adjustment\"\n}"
+            },
+            "url": {
+              "raw": "{{api_base}}/api/reception/scale-notes/{{scale_note_id}}",
+              "host": ["{{api_base}}"],
+              "path": ["api", "reception", "scale-notes", "{{scale_note_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Scale Note",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{BEARER_TOKEN}}", "type": "string" }
+              ]
+            },
+            "url": {
+              "raw": "{{api_base}}/api/reception/scale-notes/{{scale_note_id}}",
+              "host": ["{{api_base}}"],
+              "path": ["api", "reception", "scale-notes", "{{scale_note_id}}"]
+            }
+          }
+        }
+        ,
+        {
+          "name": "Delivery Orders - List",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{BEARER_TOKEN}}", "type": "string" }
+              ]
+            },
+            "url": {
+              "raw": "{{api_base}}/api/reception/delivery-orders",
+              "host": ["{{api_base}}"],
+              "path": ["api", "reception", "delivery-orders"]
+            }
+          }
+        },
+        {
+          "name": "Delivery Orders - Create",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{BEARER_TOKEN}}", "type": "string" }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"packhouse_id\": \"{{packhouse_id}}\",\n  \"order_date\": \"2026-05-06\",\n  \"received_qty\": 100,\n  \"price_per_unit\": 10,\n  \"invoice_number\": \"INV-123\"\n}"
+            },
+            "url": {
+              "raw": "{{api_base}}/api/reception/delivery-orders",
+              "host": ["{{api_base}}"],
+              "path": ["api", "reception", "delivery-orders"]
+            }
+          }
+        },
+        {
+          "name": "Delivery Orders - Show",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{BEARER_TOKEN}}", "type": "string" }
+              ]
+            },
+            "url": {
+              "raw": "{{api_base}}/api/reception/delivery-orders/{{raw_delivery_order_id}}",
+              "host": ["{{api_base}}"],
+              "path": ["api", "reception", "delivery-orders", "{{raw_delivery_order_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Delivery Orders - Update",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{BEARER_TOKEN}}", "type": "string" }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"received_qty\": 120,\n  \"price_per_unit\": 12\n}"
+            },
+            "url": {
+              "raw": "{{api_base}}/api/reception/delivery-orders/{{raw_delivery_order_id}}",
+              "host": ["{{api_base}}"],
+              "path": ["api", "reception", "delivery-orders", "{{raw_delivery_order_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Delivery Orders - Delete",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{BEARER_TOKEN}}", "type": "string" }
+              ]
+            },
+            "url": {
+              "raw": "{{api_base}}/api/reception/delivery-orders/{{raw_delivery_order_id}}",
+              "host": ["{{api_base}}"],
+              "path": ["api", "reception", "delivery-orders", "{{raw_delivery_order_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Delivery Orders - Confirm",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{BEARER_TOKEN}}", "type": "string" }
+              ]
+            },
+            "url": {
+              "raw": "{{api_base}}/api/reception/delivery-orders/{{raw_delivery_order_id}}/confirm",
+              "host": ["{{api_base}}"],
+              "path": ["api", "reception", "delivery-orders", "{{raw_delivery_order_id}}", "confirm"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reports",
+      "item": [
+        {
+          "name": "Dashboard",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{BEARER_TOKEN}}", "type": "string" }
+              ]
+            },
+            "url": {
+              "raw": "{{api_base}}/api/reports/dashboard",
+              "host": ["{{api_base}}"],
+              "path": ["api", "reports", "dashboard"]
+            }
+          }
+        },
+        {
+          "name": "Pallet Tracking",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{BEARER_TOKEN}}", "type": "string" }
+              ]
+            },
+            "url": {
+              "raw": "{{api_base}}/api/reports/pallet-tracking/{{pallet_id}}",
+              "host": ["{{api_base}}"],
+              "path": ["api", "reports", "pallet-tracking", "{{pallet_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Production Stats",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{BEARER_TOKEN}}", "type": "string" }
+              ]
+            },
+            "url": {
+              "raw": "{{api_base}}/api/reports/production-stats",
+              "host": ["{{api_base}}"],
+              "path": ["api", "reports", "production-stats"]
+            }
+          }
+        },
+        {
+          "name": "Receipt Tracking",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{BEARER_TOKEN}}", "type": "string" }
+              ]
+            },
+            "url": {
+              "raw": "{{api_base}}/api/reports/receipt-tracking/{{raw_receipt_id}}",
+              "host": ["{{api_base}}"],
+              "path": ["api", "reports", "receipt-tracking", "{{raw_receipt_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Shipments",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{BEARER_TOKEN}}", "type": "string" }
+              ]
+            },
+            "url": {
+              "raw": "{{api_base}}/api/reports/shipments",
+              "host": ["{{api_base}}"],
+              "path": ["api", "reports", "shipments"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Stock",
+      "item": [
+        {
+          "name": "Inventory",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{BEARER_TOKEN}}", "type": "string" }
+              ]
+            },
+            "url": {
+              "raw": "{{api_base}}/api/stock/inventory",
+              "host": ["{{api_base}}"],
+              "path": ["api", "stock", "inventory"]
+            }
+          }
+        },
+        {
+          "name": "Pricing",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{BEARER_TOKEN}}", "type": "string" }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"raw_receipt_id\": \"{{raw_receipt_id}}\",\n  \"price_per_kg\": 0.0000,\n  \"transport_cost\": 0\n}"
+            },
+            "url": {
+              "raw": "{{api_base}}/api/stock/pricing",
+              "host": ["{{api_base}}"],
+              "path": ["api", "stock", "pricing"]
+            }
+          }
+        },
+        {
+          "name": "Dispatch Shipment",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{BEARER_TOKEN}}", "type": "string" }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"shipping_policy_id\": \"{{shipping_policy_id}}\",\n  \"pallet_ids\": [\"{{pallet_id}}\"],\n  \"quantity_kg\": 500.000\n}"
+            },
+            "url": {
+              "raw": "{{api_base}}/api/stock/dispatch-shipment",
+              "host": ["{{api_base}}"],
+              "path": ["api", "stock", "dispatch-shipment"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

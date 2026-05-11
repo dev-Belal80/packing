@@ -1,0 +1,89 @@
+<?php
+
+namespace App\Http\Resources\Reception;
+
+use Illuminate\Http\Request;
+use Illuminate\Http\Resources\Json\JsonResource;
+
+class RawReceiptResource extends JsonResource
+{
+    public function toArray(Request $request): array
+    {
+        return [
+            'id' => $this->id,
+            'tenant_id' => $this->tenant_id,
+            'accounting_period' => $this->accounting_period,
+            'receipt_permission_number' => $this->receipt_permission_number,
+            'balance_record_number' => $this->balance_record_number,
+            'receipt_date' => $this->receipt_date,
+            'branch' => $this->branch,
+            'packing_station' => $this->packing_station,
+            'farm' => $this->farm,
+            'item_type' => $this->item_type,
+            'discount' => $this->discount,
+            'reception_unit' => $this->reception_unit,
+            'collection_unit' => $this->collection_unit,
+            'boxes_count' => $this->boxes_count,
+            'quantity_per_box' => $this->quantity_per_box,
+            'pallet_type' => $this->pallet_type,
+            'pallets_count' => $this->pallets_count,
+            'produced_quantity' => $this->produced_quantity,
+            'sorting_and_loss' => $this->sorting_and_loss,
+            'used_quantity' => $this->used_quantity,
+            'inspector' => $this->inspector,
+            'packhouse_id' => $this->packhouse_id,
+            'reference_no' => $this->reference_no,
+            'contact_id' => $this->contact_id,
+            'contact_role' => $this->contact_role,
+            'raw_material_type_id' => $this->raw_material_type_id,
+            'gate_inquiry_id' => $this->gate_inquiry_id,
+            'scale_note_id' => $this->scale_note_id,
+            'vehicle_number' => $this->vehicle_number,
+            'driver_name' => $this->driver_name,
+            'transport_type' => $this->transport_type,
+            'vehicle_type' => $this->vehicle_type,
+            'transport_contractor' => $this->transport_contractor,
+            'entry_weight' => $this->entry_weight,
+            'exit_weight' => $this->exit_weight,
+            'exit_date_time' => $this->exit_date_time,
+            'quantity_kg' => $this->quantity_kg,
+            'quality_result' => $this->quality_result,
+            'quality_notes' => $this->quality_notes,
+            'is_partial' => $this->is_partial,
+            'has_weight_dispute' => $this->has_weight_dispute,
+            'weight_dispute_notes' => $this->weight_dispute_notes,
+            'price_per_kg' => $this->price_per_kg,
+            'total_price' => $this->total_price,
+            'transport_cost' => $this->transport_cost,
+            'status' => $this->status,
+            'approval_status' => $this->approval_status,
+            'approved_by' => $this->approved_by,
+            'approved_at' => $this->approved_at,
+            'rejection_reason' => $this->rejection_reason,
+            'available_qty' => $this->available_qty,
+            'contact' => $this->whenLoaded('contact'),
+            'raw_material_type' => $this->whenLoaded('rawMaterialType'),
+            'gate_inquiry' => $this->gateInquiry ? [
+                'id' => $this->gateInquiry->id,
+                'reference_no' => $this->gateInquiry->reference_no,
+                'vehicle_number' => $this->gateInquiry->vehicle_number,
+                'driver_name' => $this->gateInquiry->driver_name,
+                'expected_qty' => $this->gateInquiry->expected_qty,
+                'status' => $this->gateInquiry->status,
+            ] : null,
+            'scale_note' => $this->scaleNote ? [
+                'id' => $this->scaleNote->id,
+                'reference_no' => $this->scaleNote->reference_no,
+                'gross_weight' => $this->scaleNote->gross_weight,
+                'tare_weight' => $this->scaleNote->tare_weight,
+                'net_weight' => $this->scaleNote->net_weight,
+                'is_manual' => $this->scaleNote->is_manual,
+            ] : null,
+            'packhouse' => $this->whenLoaded('packhouse'),
+            'approved_by_user' => $this->whenLoaded('approvedBy'),
+            'created_at' => $this->created_at,
+            'updated_at' => $this->updated_at,
+            'deleted_at' => $this->deleted_at,
+        ];
+    }
+}
