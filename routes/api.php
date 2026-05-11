@@ -14,6 +14,7 @@ use App\Http\Controllers\Api\Reception\TransportCostDistributionController;
 use App\Http\Controllers\Api\Settings\ContactController;
 use App\Http\Controllers\Api\Settings\PackhouseController;
 use App\Http\Controllers\Api\Reports\ReportController;
+use App\Http\Controllers\Api\Reports\ReceptionReportsController;
 use App\Http\Controllers\Api\Stock\StockController;
 use Illuminate\Support\Facades\Route;
 
@@ -106,6 +107,28 @@ Route::middleware([\Illuminate\Auth\Middleware\Authenticate::using('sanctum'), '
         Route::get('production-stats', [ReportController::class, 'productionStats']);
         Route::get('pallet-tracking/{id}', [ReportController::class, 'palletTracking']);
         Route::get('shipments', [ReportController::class, 'shipments']);
+
+        // Reception Reports (PDF + Excel)
+        Route::prefix('reception')->group(function () {
+            // Raw Receipts
+            Route::get('raw-receipts/pdf', [ReceptionReportsController::class, 'rawReceiptsPdf']);
+            Route::get('raw-receipts/excel', [ReceptionReportsController::class, 'rawReceiptsExcel']);
+
+            // Gate Inquiries
+            Route::get('gate-inquiries/pdf', [ReceptionReportsController::class, 'gateInquiriesPdf']);
+            Route::get('gate-inquiries/excel', [ReceptionReportsController::class, 'gateInquiriesExcel']);
+
+            // Scale Notes
+            Route::get('scale-notes/pdf', [ReceptionReportsController::class, 'scaleNotesPdf']);
+            Route::get('scale-notes/excel', [ReceptionReportsController::class, 'scaleNotesExcel']);
+
+            // Delivery Orders
+            Route::get('delivery-orders/pdf', [ReceptionReportsController::class, 'deliveryOrdersPdf']);
+            Route::get('delivery-orders/excel', [ReceptionReportsController::class, 'deliveryOrdersExcel']);
+
+            // Daily full report (all sheets in one file)
+            Route::get('daily/excel', [ReceptionReportsController::class, 'dailyFullExcel']);
+        });
     });
 
     // Existing admin/provisioning endpoints (kept)
