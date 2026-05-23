@@ -10,9 +10,9 @@ class ProductionOrderService
     {
     }
 
-    public function paginate(int $perPage = 15)
+    public function paginate(int $perPage = 15, array $filters = [])
     {
-        return $this->repo->paginate($perPage);
+        return $this->repo->paginate($perPage, $filters);
     }
 
     public function findOrFail(int $id)

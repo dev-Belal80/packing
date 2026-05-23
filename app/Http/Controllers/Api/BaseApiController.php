@@ -12,17 +12,38 @@ class BaseApiController extends Controller
         return response()->json([
             'status' => 'success',
             'message' => $message,
+            'request_id' => (string) (request()->attributes->get('request_id') ?? ''),
             'data' => $data,
         ], $code);
     }
 
-    protected function error(string $message, int $code = 400, $errors = null): JsonResponse
+    protected function error(
+        string $message,
+        int $code = 400,
+        $errors = null,
+        ?string $requiredPermission = null,
+        ?string $errorCode = null
+    ): JsonResponse
     {
-        return response()->json([
+        $payload = [
             'status' => 'error',
             'message' => $message,
-            'errors' => $errors,
-        ], $code);
+            'request_id' => (string) (request()->attributes->get('request_id') ?? ''),
+        ];
+
+        if ($errorCode !== null) {
+            $payload['error_code'] = $errorCode;
+        }
+
+        if ($errors !== null) {
+            $payload['errors'] = $errors;
+        }
+
+        if ($requiredPermission !== null) {
+            $payload['required_permission'] = $requiredPermission;
+        }
+
+        return response()->json($payload, $code);
     }
 
     protected function paginated($resource): JsonResponse

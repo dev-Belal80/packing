@@ -13,7 +13,11 @@ class SubscriptionActiveMiddleware
         if ($tenant && $tenant->subscription_ends_at && $tenant->subscription_ends_at->isPast()) {
             if (!$request->isMethod('GET')) {
                 return response()->json([
-                    'message' => 'الاشتراك منتهي — النظام في وضع القراءة فقط'
+                    'status' => 'error',
+                    'message' => 'Forbidden',
+                    'error_code' => 'forbidden',
+                    'request_id' => (string) ($request->attributes->get('request_id') ?? ''),
+                    'required_permission' => 'subscription.active',
                 ], 403);
             }
         }

@@ -15,10 +15,11 @@ class EnsureApiPermission
 
         if (! $user) {
             return response()->json([
-                'message' => 'Forbidden',
-                'code' => 'FORBIDDEN',
-                'required_permission' => 'authenticated',
-            ], 403);
+                'status' => 'error',
+                'message' => 'Unauthenticated',
+                'error_code' => 'unauthenticated',
+                'request_id' => (string) ($request->attributes->get('request_id') ?? ''),
+            ], 401);
         }
 
         $requiredPermission = ApiAccess::routePermissionForAction($request->route()?->getActionName());
@@ -29,8 +30,10 @@ class EnsureApiPermission
 
         if (! ApiAccess::canAccess($user, $requiredPermission)) {
             return response()->json([
+                'status' => 'error',
                 'message' => 'Forbidden',
-                'code' => 'FORBIDDEN',
+                'error_code' => 'forbidden',
+                'request_id' => (string) ($request->attributes->get('request_id') ?? ''),
                 'required_permission' => $requiredPermission,
             ], 403);
         }

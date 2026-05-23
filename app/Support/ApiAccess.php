@@ -2,7 +2,9 @@
 
 namespace App\Support;
 
+use App\Models\RoleScreenPermission;
 use App\Models\User;
+use Illuminate\Support\Facades\Schema;
 
 final class ApiAccess
 {
@@ -36,22 +38,18 @@ final class ApiAccess
         'reception-reports',
         'settings',
         'permissions',
-        // Reception workflow screens
+        'pallet-builder',
         'delivery-order',      // أمر توريد خام
         'gate-inquiry',        // استعلام بوابة
         'scale-note',          // علم وزن
         'transport-cost',      // توزيع تكلفة النقل
         'delivery-orders-list', // قائمة أوامر التوريد
-        // Production workflow screens
         'production-order',    // أمر إنتاج
-        'sort-record',        // سجل فرز
+        'production-orders-list',
+        'production-order-view',
         'attendance',         // حضور العمال
-        // Export workflow screens
-        'pallet',             // منصةتصدير
-        'shipping-policy',    // بوليصة شحن
         'inventory',          // المخزون
-
-        ];
+    ];
 
     private const ALL_ACTIONS = [
         'receipt.approve',
@@ -60,8 +58,12 @@ final class ApiAccess
         'order.dispatch',
         'order.pause',
         'order.cancel',
+        'sort-record.post',
+        'pallet.create',
+        'pallet.update',
+        'pallet.delete',
         'pallet.cooling',
-        'pallet.confirm_receipt',
+        'pallet.confirm',
         'shipping.approve',
         'reports.view',
         'inventory.view',
@@ -70,6 +72,37 @@ final class ApiAccess
         'user.manage',
         'tenant.provision',
     ];
+
+    /**
+     * @return array<int, string>
+     */
+    public static function allActionIds(): array
+    {
+        return self::ALL_ACTIONS;
+    }
+
+    /**
+     * Canonical list of screen permission keys.
+     *
+     * This is used by the permissions UI so the frontend doesn't need a hard-coded list.
+     *
+     * @return array<int, string>
+     */
+    public static function allScreenIds(): array
+    {
+        $screens = collect(self::ALL_SCREENS);
+
+        $fromRoutes = collect(self::routePermissions())
+            ->values()
+            ->filter(fn ($permission) => is_string($permission) && $permission !== 'route.unmapped')
+            ->reject(fn (string $permission) => in_array($permission, self::ALL_ACTIONS, true));
+
+        return $screens
+            ->merge($fromRoutes)
+            ->unique()
+            ->values()
+            ->all();
+    }
 
     public static function normalizedRole(?User $user): string
     {
@@ -104,12 +137,129 @@ final class ApiAccess
 
     public static function profileForUser(User $user): array
     {
-        $role = self::normalizedRole($user);
-
         return [
             'user' => self::userPayload($user),
-            'permissions' => self::permissionsForRole($role),
+            'permissions' => self::permissionsForUser($user),
         ];
+    }
+
+    public static function permissionsForUser(User $user): array
+    {
+        $role = self::normalizedRole($user);
+
+        $actions = self::permissionsForRole($role)['actions'] ?? [];
+
+        $screenLevels = self::screenLevelsForUser($user);
+        $screens = collect($screenLevels)
+            ->filter(fn (string $level) => $level !== 'none')
+            ->keys()
+            ->values()
+            ->all();
+
+        return [
+            'screens' => $screens,
+            'screen_levels' => $screenLevels,
+            'actions' => $actions,
+        ];
+    }
+
+    /**
+     * @return array<string, string> screen_id => access_level
+     */
+    private static function screenLevelsForUser(User $user): array
+    {
+        $role = self::normalizedRole($user);
+
+        $screenIds = self::allScreenIds();
+        $levels = [];
+
+        foreach ($screenIds as $screenId) {
+            $levels[$screenId] = self::defaultScreenAccessLevel($role, $screenId);
+        }
+
+        if ($role === 'super_admin') {
+            return array_fill_keys($screenIds, 'full');
+        }
+
+        if (! Schema::hasTable('role_screen_permissions')) {
+            return $levels;
+        }
+
+        $tenantId = (int) ($user->tenant_id ?? 0);
+        if ($tenantId <= 0) {
+            return $levels;
+        }
+
+        $rows = RoleScreenPermission::query()
+            ->withoutGlobalScope('tenant')
+            ->where('tenant_id', $tenantId)
+            ->where('role', $role)
+            ->get(['screen_id', 'access_level']);
+
+        foreach ($rows as $row) {
+            if (array_key_exists($row->screen_id, $levels)) {
+                $levels[$row->screen_id] = (string) $row->access_level;
+            }
+        }
+
+        return $levels;
+    }
+
+    private static function defaultScreenAccessLevel(string $role, string $screenId): string
+    {
+        if ($role === 'super_admin') {
+            return 'full';
+        }
+
+        // Manager is allowed to see every screen by default.
+        if ($role === 'manager') {
+            return 'full';
+        }
+
+        // Preserve legacy defaults for existing roles so the app works out-of-the-box,
+        // but allow the admin to override everything via the Permissions UI.
+        return match ($role) {
+            'receptionist' => match ($screenId) {
+                'dashboard' => 'limited',
+                'raw-receipt',
+                'receipts-list',
+                'gate-inquiries-list',
+                'scale-notes-list',
+                'settings',
+                'delivery-order',
+                'delivery-orders-list',
+                'gate-inquiry',
+                'scale-note',
+                'reception-reports',
+                'shipping-policy' => 'full',
+                default => 'none',
+            },
+            'production_supervisor' => match ($screenId) {
+                'dashboard' => 'limited',
+                'production-order',
+                'production-orders-list',
+                'attendance',
+                'production-order-view',
+                'sort-record',
+                'receipts-list',
+                'settings' => 'full',
+                default => 'none',
+            },
+            'export_officer' => match ($screenId) {
+                'dashboard' => 'limited',
+                'pallet-builder',
+                'pallet',
+                'shipping-policy',
+                'settings' => 'full',
+                default => 'none',
+            },
+            default => 'none',
+        };
+    }
+
+    public static function defaultScreenAccessLevelForRole(string $role, string $screenId): string
+    {
+        return self::defaultScreenAccessLevel($role, $screenId);
     }
 
     public static function permissionsForRole(string $role): array
@@ -130,38 +280,46 @@ final class ApiAccess
                     'receipts-list',
                     'gate-inquiries-list',
                     'scale-notes-list',
+                    'settings',
                     'delivery-order',
                     'delivery-orders-list',
                     'gate-inquiry',
                     'scale-note',
                     'reception-reports',
                 ],
-                'actions' => [
-                    'receipt.price',
-
-                ],
+                'actions' => [],
             ],
             'production_supervisor' => [
                 'screens' => [
                     'dashboard',
                     'production-order',
+                    'production-orders-list',
+                    'attendance',
+                    'production-order-view',
                     'sort-record',
+                    'receipts-list',
+                    'settings',
                 ],
                 'actions' => [
                     'order.dispatch',
                     'order.pause',
-                    'order.cancel',
+                    'sort-record.post',
                 ],
             ],
             'export_officer' => [
                 'screens' => [
                     'dashboard',
+                    'pallet-builder',
                     'pallet',
                     'shipping-policy',
+                    'settings',
                 ],
                 'actions' => [
+                    'pallet.create',
+                    'pallet.update',
+                    'pallet.delete',
                     'pallet.cooling',
-                    'pallet.confirm_receipt',
+                    'pallet.confirm',
                     'shipping.approve',
                 ],
             ],
@@ -192,10 +350,13 @@ final class ApiAccess
             return true;
         }
 
-        $profile = self::permissionsForRole($role);
+        if (in_array($requiredPermission, self::ALL_ACTIONS, true)) {
+            $profile = self::permissionsForRole($role);
+            return in_array($requiredPermission, $profile['actions'], true);
+        }
 
-        return in_array($requiredPermission, $profile['screens'], true)
-            || in_array($requiredPermission, $profile['actions'], true);
+        $levels = self::screenLevelsForUser($user);
+        return ($levels[$requiredPermission] ?? 'none') !== 'none';
     }
 
     public static function routePermissions(): array
@@ -228,6 +389,43 @@ final class ApiAccess
             'App\\Http\\Controllers\\Api\\Reception\\RawDeliveryOrderController@destroy' => 'delivery-order',
             'App\\Http\\Controllers\\Api\\Reception\\RawDeliveryOrderController@confirm' => 'delivery-order',
 
+            'App\\Http\\Controllers\\Api\\Settings\\PackhouseController@index' => 'settings',
+            'App\\Http\\Controllers\\Api\\Settings\\PackhouseController@store' => 'settings',
+            'App\\Http\\Controllers\\Api\\Settings\\PackhouseController@update' => 'settings',
+            'App\\Http\\Controllers\\Api\\Settings\\PackhouseController@destroy' => 'settings',
+            'App\\Http\\Controllers\\Api\\Settings\\BranchController@index' => 'settings',
+            'App\\Http\\Controllers\\Api\\Settings\\PayloadTemplateController@index' => 'settings',
+            'App\\Http\\Controllers\\Api\\Settings\\PayloadTemplateController@show' => 'settings',
+            'App\\Http\\Controllers\\Api\\Settings\\RawMaterialTypeController@index' => 'settings',
+            'App\\Http\\Controllers\\Api\\Settings\\RawMaterialTypeController@store' => 'settings',
+            'App\\Http\\Controllers\\Api\\Settings\\RawMaterialTypeController@update' => 'settings',
+            'App\\Http\\Controllers\\Api\\Settings\\RawMaterialTypeController@destroy' => 'settings',
+            'App\\Http\\Controllers\\Api\\Settings\\ProductController@index' => 'settings',
+            'App\\Http\\Controllers\\Api\\Settings\\ProductController@store' => 'settings',
+            'App\\Http\\Controllers\\Api\\Settings\\ProductController@update' => 'settings',
+            'App\\Http\\Controllers\\Api\\Settings\\ProductController@destroy' => 'settings',
+            'App\\Http\\Controllers\\Api\\Settings\\PalletTypeController@index' => 'settings',
+            'App\\Http\\Controllers\\Api\\Settings\\PalletTypeController@store' => 'settings',
+            'App\\Http\\Controllers\\Api\\Settings\\PalletTypeController@update' => 'settings',
+            'App\\Http\\Controllers\\Api\\Settings\\PalletTypeController@destroy' => 'settings',
+            'App\\Http\\Controllers\\Api\\Settings\\FridgeController@index' => 'settings',
+            'App\\Http\\Controllers\\Api\\Settings\\FridgeController@store' => 'settings',
+            'App\\Http\\Controllers\\Api\\Settings\\FridgeController@update' => 'settings',
+            'App\\Http\\Controllers\\Api\\Settings\\FridgeController@destroy' => 'settings',
+            'App\\Http\\Controllers\\Api\\Settings\\PermissionsController@index' => 'permissions',
+            'App\\Http\\Controllers\\Api\\Settings\\PermissionsController@update' => 'permissions',
+            'App\\Http\\Controllers\\Api\\Settings\\PermissionsController@reset' => 'permissions',
+            'App\\Http\\Controllers\\Api\\Settings\\ProductionLineController@index' => 'settings',
+            'App\\Http\\Controllers\\Api\\Settings\\ProductionLineController@store' => 'settings',
+            'App\\Http\\Controllers\\Api\\Settings\\ProductionLineController@update' => 'settings',
+            'App\\Http\\Controllers\\Api\\Settings\\ProductionLineController@destroy' => 'settings',
+            'App\\Http\\Controllers\\Api\\Settings\\ProductionStageController@index' => 'settings',
+            'App\\Http\\Controllers\\Api\\Settings\\ContactController@index' => 'settings',
+            'App\\Http\\Controllers\\Api\\Settings\\ContactController@store' => 'settings',
+            'App\\Http\\Controllers\\Api\\Settings\\ContactController@update' => 'settings',
+            'App\\Http\\Controllers\\Api\\Settings\\ContactController@destroy' => 'settings',
+            'App\\Http\\Controllers\\Api\\Settings\\ProductionSupervisorController@index' => 'production-order',
+
             'App\\Http\\Controllers\\Api\\Production\\ProductionOrderController@index' => 'production-order',
             'App\\Http\\Controllers\\Api\\Production\\ProductionOrderController@store' => 'production-order',
             'App\\Http\\Controllers\\Api\\Production\\ProductionOrderController@show' => 'production-order',
@@ -241,19 +439,24 @@ final class ApiAccess
             'App\\Http\\Controllers\\Api\\Production\\SortRecordController@show' => 'sort-record',
             'App\\Http\\Controllers\\Api\\Production\\SortRecordController@update' => 'sort-record',
             'App\\Http\\Controllers\\Api\\Production\\SortRecordController@destroy' => 'sort-record',
+            'App\\Http\\Controllers\\Api\\Production\\SortRecordController@post' => 'sort-record.post',
             'App\\Http\\Controllers\\Api\\Production\\AttendanceController@index' => 'production-order',
             'App\\Http\\Controllers\\Api\\Production\\AttendanceController@store' => 'production-order',
             'App\\Http\\Controllers\\Api\\Production\\AttendanceController@show' => 'production-order',
             'App\\Http\\Controllers\\Api\\Production\\AttendanceController@update' => 'production-order',
             'App\\Http\\Controllers\\Api\\Production\\AttendanceController@destroy' => 'production-order',
+            'App\\Http\\Controllers\\Api\\Station\\UserManagementController@index' => 'production-order',
+            'App\\Http\\Controllers\\Api\\Station\\UserManagementController@update' => 'user.manage',
+            'App\\Http\\Controllers\\Api\\Station\\UserManagementController@destroy' => 'user.manage',
 
             'App\\Http\\Controllers\\Api\\Export\\PalletController@index' => 'pallet',
-            'App\\Http\\Controllers\\Api\\Export\\PalletController@store' => 'pallet',
+            'App\\Http\\Controllers\\Api\\Export\\PalletController@store' => 'pallet.create',
             'App\\Http\\Controllers\\Api\\Export\\PalletController@show' => 'pallet',
-            'App\\Http\\Controllers\\Api\\Export\\PalletController@update' => 'pallet',
-            'App\\Http\\Controllers\\Api\\Export\\PalletController@destroy' => 'pallet',
+            'App\\Http\\Controllers\\Api\\Export\\PalletController@update' => 'pallet.update',
+            'App\\Http\\Controllers\\Api\\Export\\PalletController@destroy' => 'pallet.delete',
             'App\\Http\\Controllers\\Api\\Export\\PalletController@cooling' => 'pallet.cooling',
-            'App\\Http\\Controllers\\Api\\Export\\PalletController@confirmReceipt' => 'pallet.confirm_receipt',
+            'App\\Http\\Controllers\\Api\\Export\\PalletController@confirmReceipt' => 'pallet.confirm',
+            'App\\Http\\Controllers\\Api\\Export\\PalletController@availableOrders' => 'pallet',
             'App\\Http\\Controllers\\Api\\Export\\ShippingPolicyController@index' => 'shipping-policy',
             'App\\Http\\Controllers\\Api\\Export\\ShippingPolicyController@store' => 'shipping-policy',
             'App\\Http\\Controllers\\Api\\Export\\ShippingPolicyController@show' => 'shipping-policy',

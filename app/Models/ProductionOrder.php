@@ -7,7 +7,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
@@ -18,13 +17,20 @@ class ProductionOrder extends Model
     use LogsActivity;
 
     protected $fillable = [
-        'packhouse_id', 'reference_no', 'raw_receipt_id', 'product_id',
-        'production_line_id', 'production_stage_id', 'supervisor_id',
-        'target_qty_kg', 'actual_input_kg', 'order_type', 'client_contact_id',
-        'status', 'pause_reason', 'cancel_reason', 'cancelled_by', 'started_at', 'completed_at',
+        'packhouse_id', 'reference_no', 'accounting_period', 'branch', 'order_date',
+        'special_code', 'raw_receipt_id', 'product_id', 'pallet_type_id',
+        'production_line_id', 'production_stage_id', 'supplier_contact_id',
+        'supervisor_id', 'other_supervisor_ids', 'target_qty_kg', 'actual_input_kg',
+        'order_type', 'client_contact_id', 'status', 'notes', 'pause_reason',
+        'cancel_reason', 'cancelled_by', 'started_at', 'completed_at',
     ];
 
-    protected $casts = ['started_at' => 'datetime', 'completed_at' => 'datetime'];
+    protected $casts = [
+        'order_date' => 'date',
+        'other_supervisor_ids' => 'array',
+        'started_at' => 'datetime',
+        'completed_at' => 'datetime',
+    ];
 
     public function getActivitylogOptions(): LogOptions
     {
@@ -36,9 +42,19 @@ class ProductionOrder extends Model
         return $this->belongsTo(RawReceipt::class);
     }
 
+    public function packhouse(): BelongsTo
+    {
+        return $this->belongsTo(Packhouse::class);
+    }
+
     public function product(): BelongsTo
     {
         return $this->belongsTo(Product::class);
+    }
+
+    public function palletType(): BelongsTo
+    {
+        return $this->belongsTo(PalletType::class);
     }
 
     public function productionLine(): BelongsTo
@@ -61,14 +77,19 @@ class ProductionOrder extends Model
         return $this->belongsTo(Contact::class, 'client_contact_id');
     }
 
+    public function supplierContact(): BelongsTo
+    {
+        return $this->belongsTo(Contact::class, 'supplier_contact_id');
+    }
+
     public function pickings(): HasMany
     {
         return $this->hasMany(ProductionOrderPicking::class);
     }
 
-    public function sortRecord(): HasOne
+    public function sortRecordLines(): HasMany
     {
-        return $this->hasOne(SortRecord::class);
+        return $this->hasMany(SortRecordLine::class);
     }
 
     protected static function boot(): void

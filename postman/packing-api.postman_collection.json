@@ -26,6 +26,8 @@
     { "key": "raw_material_type_id", "value": "" },
     { "key": "pallet_type_id", "value": "" },
     { "key": "product_id", "value": "" },
+    { "key": "sort_record_id", "value": "" },
+    { "key": "production_order_id", "value": "" },
     { "key": "job_title_id", "value": "" },
     { "key": "production_line_id", "value": "" },
     { "key": "gate_inquiry_id", "value": "" },
@@ -35,7 +37,35 @@
     { "key": "sort_record_id", "value": "" },
     { "key": "pallet_id", "value": "" },
     { "key": "shipping_policy_id", "value": "" },
-    { "key": "attendance_id", "value": "" }
+    { "key": "attendance_id", "value": "" },
+    { "key": "client_contact_id", "value": "" },
+    { "key": "supplier_contact_id", "value": "" },
+    { "key": "fridge_id", "value": "" },
+    { "key": "wooden_pallet_no", "value": "" },
+    { "key": "order_number", "value": "" },
+    { "key": "final_order_no", "value": "" },
+    { "key": "branch", "value": "الرئيسي" },
+    { "key": "pallet_date", "value": "" },
+    { "key": "pallet_time", "value": "" },
+    { "key": "end_date", "value": "" },
+    { "key": "end_time", "value": "" },
+    { "key": "client_code", "value": "" },
+    { "key": "lot_no", "value": "" },
+    { "key": "raw_type", "value": "" },
+    { "key": "package_type", "value": "" },
+    { "key": "size", "value": "" },
+    { "key": "grade", "value": "" },
+    { "key": "storage_location", "value": "" },
+    { "key": "actual_weight", "value": "" },
+    { "key": "net_weight", "value": "" },
+    { "key": "cooling_start", "value": "" },
+    { "key": "cooling_end", "value": "" },
+    { "key": "stickers", "value": "" },
+    { "key": "customer_lot_no", "value": "" },
+    { "key": "original_pallet_ref", "value": "" },
+    { "key": "special_specs", "value": "" },
+    { "key": "cartons_count", "value": "" },
+    { "key": "search", "value": "" }
   ],
   "item": [
     {
@@ -369,6 +399,33 @@
           }
         },
         {
+          "name": "Available Sort Lines for Pallet",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{BEARER_TOKEN}}", "type": "string" }
+              ]
+            },
+            "url": {
+              "raw": "{{api_base}}/api/export/pallets/available-orders?per_page=25&search={{search}}",
+              "host": ["{{api_base}}"],
+              "path": ["api", "export", "pallets", "available-orders"],
+              "query": [
+                { "key": "per_page", "value": "25" },
+                { "key": "lot_only", "value": "false" },
+                { "key": "search", "value": "{{search}}" },
+                { "key": "product_id", "value": "{{product_id}}" },
+                { "key": "production_line_id", "value": "{{production_line_id}}" }
+              ]
+            }
+          }
+        },
+        {
           "name": "Create Pallet",
           "request": {
             "method": "POST",
@@ -384,7 +441,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"packhouse_id\": \"{{packhouse_id}}\",\n  \"pallet_type_id\": \"{{pallet_type_id}}\",\n  \"product_id\": \"{{product_id}}\",\n  \"sort_record_id\": \"{{sort_record_id}}\",\n  \"grade\": \"A\",\n  \"cartons_count\": 24,\n  \"total_weight_kg\": 480.000,\n  \"status\": \"building\"\n}"
+              "raw": "{\n  \"packhouse_id\": \"{{packhouse_id}}\",\n  \"sort_record_id\": \"{{sort_record_id}}\",\n  \"reference_no\": \"DS255\",\n  \"wooden_pallet_no\": \"WP-12\",\n  \"order_number\": \"ORD-1001\",\n  \"final_order_no\": \"FIN-1001\",\n  \"branch\": \"الرئيسي\",\n  \"pallet_date\": \"2026-05-17\",\n  \"pallet_time\": \"09:30\",\n  \"production_line_id\": \"{{production_line_id}}\",\n  \"pallet_type_id\": \"{{pallet_type_id}}\",\n  \"client_contact_id\": \"{{client_contact_id}}\",\n  \"client_code\": \"38345\",\n  \"product_id\": \"{{product_id}}\",\n  \"supplier_contact_id\": \"{{supplier_contact_id}}\",\n  \"lot_no\": \"LOT-55\",\n  \"fridge_id\": \"{{fridge_id}}\",\n  \"raw_type\": \"Orange\",\n  \"package_type\": \"Carton\",\n  \"size\": \"4.5 kg\",\n  \"grade\": \"A\",\n  \"storage_location\": \"A-1\",\n  \"actual_weight\": 600,\n  \"net_weight\": 594.5,\n  \"cooling_start\": \"2026-05-17 05:30:00\",\n  \"cooling_end\": \"2026-05-17 08:30:00\",\n  \"stickers\": \"Main sticker\",\n  \"customer_lot_no\": \"C-9001\",\n  \"has_carton\": true,\n  \"has_punnet\": false,\n  \"no_label\": false,\n  \"original_pallet_ref\": \"DS0001\",\n  \"special_specs\": \"Keep upright\",\n  \"production_order_id\": \"{{production_order_id}}\",\n  \"cartons_count\": 30,\n  \"status\": \"building\"\n}"
             },
             "url": {
               "raw": "{{api_base}}/api/export/pallets",
@@ -429,7 +486,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"grade\": \"A\",\n  \"cartons_count\": 30,\n  \"total_weight_kg\": 600.000,\n  \"status\": \"building\"\n}"
+              "raw": "{\n  \"packhouse_id\": \"{{packhouse_id}}\",\n  \"sort_record_id\": \"{{sort_record_id}}\",\n  \"wooden_pallet_no\": \"WP-12-EDIT\",\n  \"order_number\": \"ORD-1001\",\n  \"final_order_no\": \"FIN-1001\",\n  \"branch\": \"الرئيسي\",\n  \"pallet_date\": \"2026-05-17\",\n  \"pallet_time\": \"10:00\",\n  \"production_line_id\": \"{{production_line_id}}\",\n  \"pallet_type_id\": \"{{pallet_type_id}}\",\n  \"client_contact_id\": \"{{client_contact_id}}\",\n  \"client_code\": \"38345\",\n  \"product_id\": \"{{product_id}}\",\n  \"supplier_contact_id\": \"{{supplier_contact_id}}\",\n  \"lot_no\": \"LOT-55\",\n  \"fridge_id\": \"{{fridge_id}}\",\n  \"raw_type\": \"Orange\",\n  \"package_type\": \"Carton\",\n  \"size\": \"4.5 kg\",\n  \"grade\": \"A\",\n  \"storage_location\": \"A-1\",\n  \"actual_weight\": 610,\n  \"net_weight\": 603.2,\n  \"cooling_start\": \"2026-05-17 05:30:00\",\n  \"cooling_end\": \"2026-05-17 08:30:00\",\n  \"stickers\": \"Main sticker\",\n  \"customer_lot_no\": \"C-9001\",\n  \"has_carton\": true,\n  \"has_punnet\": false,\n  \"no_label\": false,\n  \"original_pallet_ref\": \"DS0001\",\n  \"special_specs\": \"Keep upright\",\n  \"cartons_count\": 31,\n  \"status\": \"building\"\n}"
             },
             "url": {
               "raw": "{{api_base}}/api/export/pallets/{{pallet_id}}",
@@ -757,9 +814,21 @@
               ]
             },
             "url": {
-              "raw": "{{api_base}}/api/production/orders",
+              "raw": "{{api_base}}/api/production/orders?status={{status}}&packhouse_id={{packhouse_id}}&production_line_id={{production_line_id}}&production_stage_id={{production_stage_id}}&supervisor_id={{supervisor_id}}&product_id={{product_id}}&raw_receipt_id={{raw_receipt_id}}&date_from={{date_from}}&date_to={{date_to}}&search={{search}}",
               "host": ["{{api_base}}"],
-              "path": ["api", "production", "orders"]
+              "path": ["api", "production", "orders"],
+              "query": [
+                { "key": "status", "value": "{{status}}" },
+                { "key": "packhouse_id", "value": "{{packhouse_id}}" },
+                { "key": "production_line_id", "value": "{{production_line_id}}" },
+                { "key": "production_stage_id", "value": "{{production_stage_id}}" },
+                { "key": "supervisor_id", "value": "{{supervisor_id}}" },
+                { "key": "product_id", "value": "{{product_id}}" },
+                { "key": "raw_receipt_id", "value": "{{raw_receipt_id}}" },
+                { "key": "date_from", "value": "{{date_from}}" },
+                { "key": "date_to", "value": "{{date_to}}" },
+                { "key": "search", "value": "{{search}}" }
+              ]
             }
           }
         },
@@ -779,7 +848,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"packhouse_id\": \"{{packhouse_id}}\",\n  \"raw_receipt_id\": \"{{raw_receipt_id}}\",\n  \"product_id\": \"{{product_id}}\",\n  \"production_line_id\": \"{{production_line_id}}\",\n  \"production_stage_id\": 1,\n  \"supervisor_id\": 1,\n  \"target_qty_kg\": 1000,\n  \"actual_input_kg\": 0,\n  \"order_type\": \"own\",\n  \"status\": \"draft\"\n}"
+              "raw": "{\n  \"accounting_period\": \"2026-05\",\n  \"branch\": \"Main\",\n  \"order_date\": \"2026-05-14\",\n  \"special_code\": \"PO-EXT-001\",\n  \"packhouse_id\": \"{{packhouse_id}}\",\n  \"raw_receipt_id\": \"{{raw_receipt_id}}\",\n  \"product_id\": \"{{product_id}}\",\n  \"pallet_type_id\": \"{{pallet_type_id}}\",\n  \"production_line_id\": \"{{production_line_id}}\",\n  \"production_stage_id\": \"{{production_stage_id}}\",\n  \"supplier_contact_id\": \"{{supplier_contact_id}}\",\n  \"client_contact_id\": \"{{client_contact_id}}\",\n  \"supervisor_id\": \"{{supervisor_id}}\",\n  \"other_supervisor_ids\": [{{other_supervisor_id}}],\n  \"target_qty_kg\": 1000,\n  \"actual_input_kg\": 0,\n  \"order_type\": \"own\",\n  \"status\": \"draft\",\n  \"notes\": \"Initial production order\"\n}"
             },
             "url": {
               "raw": "{{api_base}}/api/production/orders",
@@ -824,7 +893,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"target_qty_kg\": 1200,\n  \"actual_input_kg\": 100,\n  \"status\": \"draft\"\n}"
+              "raw": "{\n  \"accounting_period\": \"2026-05\",\n  \"branch\": \"Main\",\n  \"order_date\": \"2026-05-15\",\n  \"special_code\": \"PO-EXT-001\",\n  \"production_stage_id\": \"{{production_stage_id}}\",\n  \"production_line_id\": \"{{production_line_id}}\",\n  \"supervisor_id\": \"{{supervisor_id}}\",\n  \"other_supervisor_ids\": [{{other_supervisor_id}}],\n  \"target_qty_kg\": 1200,\n  \"actual_input_kg\": 100,\n  \"status\": \"draft\",\n  \"notes\": \"Updated order\"\n}"
             },
             "url": {
               "raw": "{{api_base}}/api/production/orders/{{order_id}}",
@@ -1030,6 +1099,216 @@
               "raw": "{{api_base}}/api/production/sort-records/{{sort_record_id}}",
               "host": ["{{api_base}}"],
               "path": ["api", "production", "sort-records", "{{sort_record_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Settings",
+      "item": [
+        {
+          "name": "List Packhouses",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{BEARER_TOKEN}}", "type": "string" }
+              ]
+            },
+            "url": {
+              "raw": "{{api_base}}/api/settings/packhouses?search={{search}}",
+              "host": ["{{api_base}}"],
+              "path": ["api", "settings", "packhouses"],
+              "query": [
+                { "key": "search", "value": "{{search}}" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "List Branches",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{BEARER_TOKEN}}", "type": "string" }
+              ]
+            },
+            "url": {
+              "raw": "{{api_base}}/api/settings/branches",
+              "host": ["{{api_base}}"],
+              "path": ["api", "settings", "branches"]
+            }
+          }
+        },
+        {
+          "name": "List Pallet Types",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{BEARER_TOKEN}}", "type": "string" }
+              ]
+            },
+            "url": {
+              "raw": "{{api_base}}/api/settings/pallet-types",
+              "host": ["{{api_base}}"],
+              "path": ["api", "settings", "pallet-types"]
+            }
+          }
+        },
+        {
+          "name": "List Products",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{BEARER_TOKEN}}", "type": "string" }
+              ]
+            },
+            "url": {
+              "raw": "{{api_base}}/api/settings/products?search={{search}}",
+              "host": ["{{api_base}}"],
+              "path": ["api", "settings", "products"],
+              "query": [
+                { "key": "search", "value": "{{search}}" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "List Production Lines",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{BEARER_TOKEN}}", "type": "string" }
+              ]
+            },
+            "url": {
+              "raw": "{{api_base}}/api/settings/production-lines?packhouse_id={{packhouse_id}}&search={{search}}",
+              "host": ["{{api_base}}"],
+              "path": ["api", "settings", "production-lines"],
+              "query": [
+                { "key": "packhouse_id", "value": "{{packhouse_id}}" },
+                { "key": "search", "value": "{{search}}" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "List Production Stages",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{BEARER_TOKEN}}", "type": "string" }
+              ]
+            },
+            "url": {
+              "raw": "{{api_base}}/api/settings/production-stages?search={{search}}",
+              "host": ["{{api_base}}"],
+              "path": ["api", "settings", "production-stages"],
+              "query": [
+                { "key": "search", "value": "{{search}}" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "List Supplier Contacts",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{BEARER_TOKEN}}", "type": "string" }
+              ]
+            },
+            "url": {
+              "raw": "{{api_base}}/api/settings/contacts?role=supplier&search={{search}}",
+              "host": ["{{api_base}}"],
+              "path": ["api", "settings", "contacts"],
+              "query": [
+                { "key": "role", "value": "supplier" },
+                { "key": "search", "value": "{{search}}" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "List Client Contacts",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{BEARER_TOKEN}}", "type": "string" }
+              ]
+            },
+            "url": {
+              "raw": "{{api_base}}/api/settings/contacts?role=client&search={{search}}",
+              "host": ["{{api_base}}"],
+              "path": ["api", "settings", "contacts"],
+              "query": [
+                { "key": "role", "value": "client" },
+                { "key": "search", "value": "{{search}}" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "List Production Supervisors",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{BEARER_TOKEN}}", "type": "string" }
+              ]
+            },
+            "url": {
+              "raw": "{{api_base}}/api/station/users?role=production_supervisor&search={{search}}",
+              "host": ["{{api_base}}"],
+              "path": ["api", "station", "users"],
+              "query": [
+                { "key": "role", "value": "production_supervisor" },
+                { "key": "search", "value": "{{search}}" }
+              ]
             }
           }
         }

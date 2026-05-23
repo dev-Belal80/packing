@@ -13,7 +13,13 @@ class TenantMiddleware
     {
         $user = $request->user();
         if (!$user || !$user->tenant_id) {
-            return response()->json(['message' => 'Tenant not found'], 403);
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Forbidden',
+                'error_code' => 'forbidden',
+                'request_id' => (string) ($request->attributes->get('request_id') ?? ''),
+                'required_permission' => 'tenant.access',
+            ], 403);
         }
         app()->instance('current_tenant_id', $user->tenant_id);
 

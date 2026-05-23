@@ -82,6 +82,13 @@ class AuthController extends Controller
 
     public function me(Request $request)
     {
-        return response()->json(ApiAccess::profileForUser($request->user()));
+        $payload = ApiAccess::profileForUser($request->user());
+
+        if ($token = $request->bearerToken()) {
+            $payload['token_type'] = 'Bearer';
+            $payload['token'] = $token;
+        }
+
+        return response()->json($payload);
     }
 }

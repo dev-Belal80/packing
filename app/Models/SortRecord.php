@@ -14,47 +14,100 @@ class SortRecord extends Model
     use HasFactory, SoftDeletes, BelongsToTenant;
 
     protected $fillable = [
-        'production_order_id', 'grade_a_kg', 'grade_b_kg', 'grade_c_kg',
-        'normal_waste_kg', 'damaged_kg', 'damage_reason',
-        'started_at', 'ended_at', 'has_waste_alert', 'recorded_by',
+        'packhouse_id',
+        'reference_no',
+        'accounting_period',
+        'branch',
+        'sort_date',
+        'sort_time',
+        'description_ar',
+        'description_en',
+        'notes',
+        'total_grade_a',
+        'total_grade_b',
+        'total_grade_c',
+        'total_waste',
+        'total_returned',
+        'total_sort',
+        'status',
+        'has_waste_alert',
+        'posted_by',
+        'posted_at',
+        'created_by',
     ];
 
-    protected $casts = ['started_at' => 'datetime', 'ended_at' => 'datetime', 'has_waste_alert' => 'boolean'];
-
-    protected $appends = ['total_output', 'waste_pct'];
-
-    public function productionOrder(): BelongsTo
-    {
-        return $this->belongsTo(ProductionOrder::class);
-    }
-
-    public function recordedBy(): BelongsTo
-    {
-        return $this->belongsTo(User::class, 'recorded_by');
-    }
+    protected $casts = [
+        'sort_date' => 'date',
+        'posted_at' => 'datetime',
+        'has_waste_alert' => 'boolean',
+    ];
 
     public function pallets(): HasMany
     {
         return $this->hasMany(Pallet::class);
     }
 
-    public function getTotalOutputAttribute(): float
+    public function packhouse(): BelongsTo
     {
-        return (float) $this->grade_a_kg
-            + (float) $this->grade_b_kg
-            + (float) $this->grade_c_kg
-            + (float) $this->normal_waste_kg
-            + (float) $this->damaged_kg;
+        return $this->belongsTo(Packhouse::class);
     }
 
-    public function getWastePctAttribute(): float
+    public function lines(): HasMany
     {
-        $actualInput = (float) ($this->productionOrder?->actual_input_kg ?? 0);
-        if ($actualInput <= 0) {
-            return 0.0;
-        }
+        return $this->hasMany(SortRecordLine::class)->orderBy('sort_order');
+    }
 
-        return (((float) $this->normal_waste_kg + (float) $this->damaged_kg) / $actualInput) * 100;
+    public function postedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'posted_by');
+    }
+
+    public function createdBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    protected static function boot(): void
+    {
+        parent::boot();
+
+        static::creating(function (self $model): void {
+            if (empty($model->reference_no)) {
+                $tenantId = (int) ($model->tenant_id ?? app('current_tenant_id'));
+                $date = now()->format('Ymd');
+                $count = self::withoutGlobalScopes()
+                    ->where('tenant_id', $tenantId)
+                    ->whereDate('created_at', today())
+                    ->count() + 1;
+                $model->reference_no = sprintf('SR-%s-%04d', $date, $count);
+            }
+
+            if (empty($model->created_by) && auth()->check()) {
+                $model->created_by = auth()->id();
+            }
+        });
+    }
+
+    public function recalculateTotals(): void
+    {
+        $totalGradeA = (float) $this->lines()->sum('grade_a_kg');
+        $totalGradeB = (float) $this->lines()->sum('grade_b_kg');
+        $totalGradeC = (float) $this->lines()->sum('grade_c_kg');
+        $totalWaste = (float) $this->lines()->sum('waste_kg');
+        $totalReturned = (float) $this->lines()->sum('returned_kg');
+        $totalSort = $totalGradeA + $totalGradeB + $totalGradeC + $totalWaste + $totalReturned;
+
+        $wastePct = $totalSort > 0 ? ($totalWaste / $totalSort) * 100 : 0.0;
+
+        $this->updateQuietly([
+            'total_grade_a' => $totalGradeA,
+            'total_grade_b' => $totalGradeB,
+            'total_grade_c' => $totalGradeC,
+            'total_waste' => $totalWaste,
+            'total_returned' => $totalReturned,
+            'total_sort' => $totalSort,
+            'has_waste_alert' => $wastePct > 10,
+        ]);
     }
 }
 

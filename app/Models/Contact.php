@@ -13,7 +13,7 @@ class Contact extends Model
     // BR-002: Flexible contact — role determined per document
     use HasFactory, SoftDeletes, BelongsToTenant;
 
-    protected $fillable = ['name', 'phone', 'email', 'address', 'type', 'tags', 'notes', 'is_active'];
+    protected $fillable = ['name', 'phone', 'email', 'national_id', 'address', 'type', 'tags', 'notes', 'is_active'];
 
     protected $casts = ['tags' => 'array', 'is_active' => 'boolean'];
 

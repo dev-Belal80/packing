@@ -30,7 +30,13 @@ class EnsureTenantSubscriptionNotExpired
         }
 
         return $forbiddenMessage
-            ? response()->json(['message' => $forbiddenMessage], 403)
+            ? response()->json([
+                'status' => 'error',
+                'message' => 'Forbidden',
+                'error_code' => 'forbidden',
+                'request_id' => (string) ($request->attributes->get('request_id') ?? ''),
+                'required_permission' => 'subscription.active',
+            ], 403)
             : $next($request);
     }
 }

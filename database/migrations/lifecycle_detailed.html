@@ -1,0 +1,573 @@
+
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font-sans); direction: rtl; }
+.wrap { padding: 1rem 0; }
+
+.tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
+.tab { font-size: 12px; padding: 5px 12px; border-radius: 20px; border: 0.5px solid var(--color-border-secondary); color: var(--color-text-secondary); cursor: pointer; background: transparent; transition: all .15s; white-space: nowrap; }
+.tab.active { background: var(--color-text-primary); color: var(--color-background-primary); border-color: transparent; }
+
+.section { display: none; }
+.section.active { display: block; }
+
+.role-header { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 0.5px solid var(--color-border-tertiary); }
+.role-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+.role-name { font-size: 16px; font-weight: 500; color: var(--color-text-primary); }
+.role-desc { font-size: 12px; color: var(--color-text-secondary); margin-top: 2px; }
+
+.day-section { margin-bottom: 20px; }
+.day-label { font-size: 11px; font-weight: 500; color: var(--color-text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+.day-label::after { content: ''; flex: 1; height: 0.5px; background: var(--color-border-tertiary); }
+
+.timeline { display: flex; flex-direction: column; gap: 0; }
+.t-item { display: flex; gap: 12px; position: relative; }
+.t-item:not(:last-child) .t-line { flex: 1; width: 1px; background: var(--color-border-tertiary); margin: 4px auto; min-height: 12px; }
+.t-left { display: flex; flex-direction: column; align-items: center; width: 28px; flex-shrink: 0; }
+.t-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; margin-top: 5px; }
+.t-dot.normal { background: #1D9E75; }
+.t-dot.warn { background: #BA7517; }
+.t-dot.error { background: #A32D2D; }
+.t-dot.info { background: #185FA5; }
+.t-line { width: 1px; background: var(--color-border-tertiary); flex: 1; margin: 2px auto; }
+.t-content { flex: 1; padding-bottom: 14px; }
+.t-title { font-size: 13px; font-weight: 500; color: var(--color-text-primary); margin-bottom: 4px; }
+.t-desc { font-size: 12px; color: var(--color-text-secondary); line-height: 1.6; }
+
+.scenario-block { margin-top: 8px; }
+.scenario { border-radius: var(--border-radius-md); padding: 8px 10px; margin-bottom: 5px; border: 0.5px solid transparent; }
+.s-normal { background: #E1F5EE; border-color: #5DCAA5; }
+.s-warn { background: #FAEEDA; border-color: #EF9F27; }
+.s-error { background: #FCEBEB; border-color: #F09595; }
+.s-info { background: #E6F1FB; border-color: #85B7EB; }
+@media (prefers-color-scheme: dark) {
+  .s-normal { background: #04342C; border-color: #0F6E56; }
+  .s-warn { background: #412402; border-color: #854F0B; }
+  .s-error { background: #501313; border-color: #A32D2D; }
+  .s-info { background: #042C53; border-color: #185FA5; }
+}
+.s-label { font-size: 10px; font-weight: 500; margin-bottom: 3px; }
+.s-normal .s-label { color: #0F6E56; }
+.s-warn .s-label { color: #854F0B; }
+.s-error .s-label { color: #A32D2D; }
+.s-info .s-label { color: #185FA5; }
+@media (prefers-color-scheme: dark) {
+  .s-normal .s-label { color: #9FE1CB; }
+  .s-warn .s-label { color: #FAC775; }
+  .s-error .s-label { color: #F7C1C1; }
+  .s-info .s-label { color: #B5D4F4; }
+}
+.s-text { font-size: 12px; color: var(--color-text-primary); line-height: 1.6; }
+
+.kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+.kpi-card { background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: 10px 12px; border: 0.5px solid var(--color-border-tertiary); }
+.kpi-val { font-size: 18px; font-weight: 500; color: var(--color-text-primary); }
+.kpi-label { font-size: 11px; color: var(--color-text-secondary); margin-top: 2px; }
+
+.permission-list { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 8px; }
+.perm { font-size: 11px; padding: 3px 8px; border-radius: 20px; background: var(--color-background-secondary); border: 0.5px solid var(--color-border-tertiary); color: var(--color-text-secondary); }
+.perm.yes { border-color: #1D9E75; color: #0F6E56; background: #E1F5EE; }
+.perm.no { border-color: #A32D2D; color: #A32D2D; background: #FCEBEB; text-decoration: line-through; }
+@media (prefers-color-scheme: dark) {
+  .perm.yes { border-color: #0F6E56; color: #9FE1CB; background: #04342C; }
+  .perm.no { border-color: #A32D2D; color: #F7C1C1; background: #501313; }
+}
+</style>
+
+<div class="wrap">
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('reception')">موظف الاستقبال</button>
+    <button class="tab" onclick="showTab('production')">مشرف الإنتاج</button>
+    <button class="tab" onclick="showTab('export')">موظف التصدير</button>
+    <button class="tab" onclick="showTab('manager')">مدير المحطة</button>
+    <button class="tab" onclick="showTab('superadmin')">Super Admin</button>
+  </div>
+
+  <!-- موظف الاستقبال -->
+  <div class="section active" id="tab-reception">
+    <div class="role-header">
+      <div class="role-icon" style="background:#FAEEDA">📋</div>
+      <div>
+        <div class="role-name">موظف الاستقبال</div>
+        <div class="role-desc">مسؤول عن استقبال الخام عند البوابة وتسجيل كل حركة دخول</div>
+      </div>
+    </div>
+
+    <div class="day-section">
+      <div class="day-label">أول النهار — قبل الاستقبال</div>
+      <div class="timeline">
+        <div class="t-item">
+          <div class="t-left"><div class="t-dot info"></div><div class="t-line"></div></div>
+          <div class="t-content">
+            <div class="t-title">مراجعة أوامر التوريد المجدولة</div>
+            <div class="t-desc">بيفتح النظام ويشوف أوامر التوريد المتوقعة النهارده — مين بييجي ومنهو وكام كمية</div>
+          </div>
+        </div>
+        <div class="t-item">
+          <div class="t-left"><div class="t-dot info"></div><div class="t-line"></div></div>
+          <div class="t-content">
+            <div class="t-title">تجهيز الميزان والطابعة</div>
+            <div class="t-desc">التأكد إن ميزان البوابة متصل بالنظام والطابعة شغالة لطباعة وصولات الاستلام</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="day-section">
+      <div class="day-label">استقبال عربية خام — السيناريو الأساسي</div>
+      <div class="timeline">
+        <div class="t-item">
+          <div class="t-left"><div class="t-dot normal"></div><div class="t-line"></div></div>
+          <div class="t-content">
+            <div class="t-title">1 — استعلام البوابة</div>
+            <div class="t-desc">العربية بتيجي — الموظف بيسجل: رقم العربية، اسم السائق، المزارع، نوع الخام المتوقع</div>
+            <div class="scenario-block">
+              <div class="scenario s-normal"><div class="s-label">السيناريو العادي</div><div class="s-text">المزارع موجود في النظام → بيختاره من القائمة مباشرة</div></div>
+              <div class="scenario s-warn"><div class="s-label">مزارع جديد</div><div class="s-text">مش موجود في النظام → بيضيفه على الطاير كـ contact جديد بدون ما يخرج من شاشة الاستقبال</div></div>
+              <div class="scenario s-info"><div class="s-label">مرتبط بأمر توريد</div><div class="s-text">لو في أمر توريد مسبق → النظام بيربطهم تلقائي ويملي البيانات</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="t-item">
+          <div class="t-left"><div class="t-dot normal"></div><div class="t-line"></div></div>
+          <div class="t-content">
+            <div class="t-title">2 — علم الوزن الأول (وزن العربية ملية)</div>
+            <div class="t-desc">العربية بتتوزن قبل تفريغها — الوزن بيتسجل تلقائي من الميزان أو يدوياً</div>
+          </div>
+        </div>
+        <div class="t-item">
+          <div class="t-left"><div class="t-dot normal"></div><div class="t-line"></div></div>
+          <div class="t-content">
+            <div class="t-title">3 — فحص الجودة</div>
+            <div class="t-desc">الموظف بيفحص عينة من الخام ويسجل النتيجة</div>
+            <div class="scenario-block">
+              <div class="scenario s-normal"><div class="s-label">ممتاز / جيد</div><div class="s-text">بيكمل الاستلام عادي — الخام بيدخل للتفريغ</div></div>
+              <div class="scenario s-warn"><div class="s-label">جودة منخفضة</div><div class="s-text">بيسجل ملاحظة وبيخطر المدير — الاستقبال بيكمل لكن بعلامة تحذير على الاستلامة</div></div>
+              <div class="scenario s-error"><div class="s-label">مرفوض</div><div class="s-text">الخام مرفوض كلياً → بيتسجل "استلامة مرفوضة" مع السبب → العربية بترجع للمزارع → بيتطبع إشعار رفض رسمي</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="t-item">
+          <div class="t-left"><div class="t-dot normal"></div><div class="t-line"></div></div>
+          <div class="t-content">
+            <div class="t-title">4 — تسجيل الاستلامة</div>
+            <div class="t-desc">تسجيل التفاصيل الكاملة: نوع الخام، عدد الصناديق، الكمية التقديرية، الدرجة، المزارع، التاريخ</div>
+            <div class="scenario-block">
+              <div class="scenario s-info"><div class="s-label">خام من مزرعة المحطة</div><div class="s-text">بيختار "مزرعة المحطة" كمصدر → مفيش حساب مورد → التكلفة بتتحسب داخلياً بس</div></div>
+              <div class="scenario s-info"><div class="s-label">خام مشترى</div><div class="s-text">بيربط بمورد خارجي → بيتحسب مستحق للمورد تلقائياً</div></div>
+              <div class="scenario s-info"><div class="s-label">خام عميل للتعبئة</div><div class="s-text">بيربط بعميل → المحطة مش بتشتري → بتاخد أجر تعبئة بس</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="t-item">
+          <div class="t-left"><div class="t-dot normal"></div><div class="t-line"></div></div>
+          <div class="t-content">
+            <div class="t-title">5 — علم الوزن التاني (وزن العربية فاضية)</div>
+            <div class="t-desc">بعد التفريغ — الفرق بين الوزنين = صافي وزن الخام الفعلي. النظام بيحسبه تلقائي ويحدث الاستلامة</div>
+          </div>
+        </div>
+        <div class="t-item">
+          <div class="t-left"><div class="t-dot normal"></div></div>
+          <div class="t-content">
+            <div class="t-title">6 — طباعة وصل الاستلام</div>
+            <div class="t-desc">بيتطبع وصل بباركود يشمل: رقم الاستلامة، اسم المزارع، الوزن، النوع، التاريخ. نسخة للمزارع ونسخة للمحطة</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="day-section">
+      <div class="day-label">حالات استثنائية</div>
+      <div class="timeline">
+        <div class="t-item">
+          <div class="t-left"><div class="t-dot warn"></div><div class="t-line"></div></div>
+          <div class="t-content">
+            <div class="t-title">خلاف على الوزن</div>
+            <div class="t-desc">المزارع مش موافق على الوزن المسجل</div>
+            <div class="scenario-block">
+              <div class="scenario s-warn"><div class="s-label">الإجراء المقترح</div><div class="s-text">بيتم إعادة الوزن أمام المزارع → لو في فرق → بيتسجل "وزن معدّل" مع سبب التعديل ويوقع عليه المزارع رقمياً أو بتوقيع ورقي</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="t-item">
+          <div class="t-left"><div class="t-dot warn"></div><div class="t-line"></div></div>
+          <div class="t-content">
+            <div class="t-title">استلام جزئي</div>
+            <div class="t-desc">الخام وصل أقل من الكمية المطلوبة في أمر التوريد</div>
+            <div class="scenario-block">
+              <div class="scenario s-warn"><div class="s-label">الإجراء المقترح</div><div class="s-text">الاستلامة بتتسجل بالكمية الفعلية → أمر التوريد بيفضل "مفتوح" → ينتظر باقي الكمية في رحلة تانية</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="t-item">
+          <div class="t-left"><div class="t-dot error"></div></div>
+          <div class="t-content">
+            <div class="t-title">عطل في الميزان</div>
+            <div class="t-desc">الميزان عطلان أو مش متصل بالنظام</div>
+            <div class="scenario-block">
+              <div class="scenario s-error"><div class="s-label">الإجراء المقترح</div><div class="s-text">بيتم إدخال الوزن يدوياً مع تسجيل "وزن يدوي" كعلامة على الاستلامة لمراجعتها لاحقاً من المدير</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="day-section">
+      <div class="day-label">الصلاحيات</div>
+      <div class="permission-list">
+        <span class="perm yes">إنشاء استلامة</span>
+        <span class="perm yes">إنشاء علم وزن</span>
+        <span class="perm yes">إنشاء استعلام بوابة</span>
+        <span class="perm yes">إضافة contact جديد</span>
+        <span class="perm yes">طباعة وصل استلام</span>
+        <span class="perm no">تعديل استلامة معتمدة</span>
+        <span class="perm no">حذف استلامة</span>
+        <span class="perm no">تسعير الخام</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- مشرف الإنتاج -->
+  <div class="section" id="tab-production">
+    <div class="role-header">
+      <div class="role-icon" style="background:#FBEAF0">⚙️</div>
+      <div>
+        <div class="role-name">مشرف الإنتاج</div>
+        <div class="role-desc">مسؤول عن إدارة خطوط التشغيل والفرز والعمالة</div>
+      </div>
+    </div>
+
+    <div class="day-section">
+      <div class="day-label">أول النهار — التخطيط</div>
+      <div class="timeline">
+        <div class="t-item">
+          <div class="t-left"><div class="t-dot info"></div><div class="t-line"></div></div>
+          <div class="t-content">
+            <div class="t-title">مراجعة الخام المتاح</div>
+            <div class="t-desc">بيشوف الكميات الموجودة في المخزن والجاهزة للتشغيل مع تاريخ دخول كل دفعة — الأقدم يتشغّل أول</div>
+          </div>
+        </div>
+        <div class="t-item">
+          <div class="t-left"><div class="t-dot info"></div><div class="t-line"></div></div>
+          <div class="t-content">
+            <div class="t-title">تسجيل حضور العمالة</div>
+            <div class="t-desc">بيسجل الحضور لكل عامل: الاسم، الوظيفة، وقت الحضور. النظام بيحسب الأجر تلقائياً من تسعيرة كل وظيفة</div>
+            <div class="scenario-block">
+              <div class="scenario s-warn"><div class="s-label">عامل غائب</div><div class="s-text">بيسجل غياب مع السبب لو معروف — بيأثر على تكلفة التشغيل اليومي</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="day-section">
+      <div class="day-label">التشغيل — السيناريو الأساسي</div>
+      <div class="timeline">
+        <div class="t-item">
+          <div class="t-left"><div class="t-dot normal"></div><div class="t-line"></div></div>
+          <div class="t-content">
+            <div class="t-title">1 — فتح أمر التشغيل</div>
+            <div class="t-desc">بيحدد: الخام المراد تشغيله، المنتج المطلوب، الكمية المستهدفة، خط الإنتاج، المرحلة</div>
+            <div class="scenario-block">
+              <div class="scenario s-info"><div class="s-label">تشغيل للمحطة</div><div class="s-text">المنتج النهائي ملك المحطة — للتصدير أو البيع</div></div>
+              <div class="scenario s-info"><div class="s-label">تشغيل للغير</div><div class="s-text">عميل بييجي بخامه → المحطة بتشغّله → بتاخد أجر فقط → بيتسجل منفصل</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="t-item">
+          <div class="t-left"><div class="t-dot normal"></div><div class="t-line"></div></div>
+          <div class="t-content">
+            <div class="t-title">2 — صرف أمر التشغيل</div>
+            <div class="t-desc">صرف الخام فعلياً من المخزن لخط الإنتاج. رصيد المخزون بينقص فوراً</div>
+            <div class="scenario-block">
+              <div class="scenario s-error"><div class="s-label">الخام مش كافي في المخزن</div><div class="s-text">النظام بيمنع الصرف ويعرض الكمية المتاحة فعلاً — المشرف يعدل الكمية أو ينتظر استلام جديد</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="t-item">
+          <div class="t-left"><div class="t-dot normal"></div><div class="t-line"></div></div>
+          <div class="t-content">
+            <div class="t-title">3 — تسجيل الفرزة</div>
+            <div class="t-desc">نتيجة التشغيل الفعلية بعد انتهاء الخط</div>
+            <div class="scenario-block">
+              <div class="scenario s-normal"><div class="s-label">النتيجة العادية</div><div class="s-text">كمية درجة A + كمية درجة B + كمية درجة C + فاقد طبيعي = إجمالي الخام المشغّل</div></div>
+              <div class="scenario s-warn"><div class="s-label">فاقد أعلى من الطبيعي</div><div class="s-text">النظام بيحسب نسبة الفاقد — لو تعدت الحد المسموح → تنبيه للمدير تلقائي مع سبب مقترح</div></div>
+              <div class="scenario s-error"><div class="s-label">تلف كبير</div><div class="s-text">بيتسجل سبب التلف (مرض، حرارة، سوء تخزين) → بيخصم من رصيد المخزون → بيتحسب خسارة منفصلة</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="t-item">
+          <div class="t-left"><div class="t-dot normal"></div></div>
+          <div class="t-content">
+            <div class="t-title">4 — إيقاف / استئناف أمر التشغيل</div>
+            <div class="t-desc">لو التشغيل وقف في النص (عطل، استراحة، نقص عمالة)</div>
+            <div class="scenario-block">
+              <div class="scenario s-warn"><div class="s-label">وقف مؤقت</div><div class="s-text">أمر التشغيل بيتحوّل لـ "موقوف مؤقتاً" مع تسجيل وقت الوقوف والسبب — بيكمل من نفس المكان</div></div>
+              <div class="scenario s-error"><div class="s-label">إلغاء كامل</div><div class="s-text">الخام المصروف بيرجع للمخزون — أمر التشغيل بيتلغى مع توثيق السبب — لازم موافقة المدير</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="day-section">
+      <div class="day-label">الصلاحيات</div>
+      <div class="permission-list">
+        <span class="perm yes">فتح أمر تشغيل</span>
+        <span class="perm yes">صرف خام للتشغيل</span>
+        <span class="perm yes">تسجيل فرزة</span>
+        <span class="perm yes">تسجيل حضور العمالة</span>
+        <span class="perm yes">تشغيل للغير</span>
+        <span class="perm yes">إيقاف أمر تشغيل</span>
+        <span class="perm no">إلغاء أمر تشغيل (تحتاج مدير)</span>
+        <span class="perm no">تعديل فرزة معتمدة</span>
+        <span class="perm no">تسعير الخام</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- موظف التصدير -->
+  <div class="section" id="tab-export">
+    <div class="role-header">
+      <div class="role-icon" style="background:#EEEDFE">🚢</div>
+      <div>
+        <div class="role-name">موظف التصدير</div>
+        <div class="role-desc">مسؤول عن تكوين الباليتات والتبريد والشحن</div>
+      </div>
+    </div>
+
+    <div class="day-section">
+      <div class="day-label">تكوين الباليتات</div>
+      <div class="timeline">
+        <div class="t-item">
+          <div class="t-left"><div class="t-dot normal"></div><div class="t-line"></div></div>
+          <div class="t-content">
+            <div class="t-title">1 — تكوين باليتة جديدة</div>
+            <div class="t-desc">بيختار: نوع الباليتة، المنتج، الدرجة، عدد الكراتين. النظام بيحسب الوزن الإجمالي تلقائياً</div>
+            <div class="scenario-block">
+              <div class="scenario s-info"><div class="s-label">باليتة مختلطة</div><div class="s-text">في حالات كراتين من درجات مختلفة في نفس الباليتة — النظام بيسمح بيها مع تسجيل نسبة كل درجة</div></div>
+              <div class="scenario s-warn"><div class="s-label">كراتين مش كافية</div><div class="s-text">لو الكراتين أقل من الحد الأدنى للباليتة → تحذير → يكمّل من تشغيلة تانية أو يعمل باليتة ناقصة بإذن المدير</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="t-item">
+          <div class="t-left"><div class="t-dot normal"></div><div class="t-line"></div></div>
+          <div class="t-content">
+            <div class="t-title">2 — طباعة استيكر الباليتة</div>
+            <div class="t-desc">بيتطبع استيكر بـ QR code يحتوي: رقم الباليتة، المنتج، الدرجة، الوزن، التاريخ، المحطة</div>
+          </div>
+        </div>
+        <div class="t-item">
+          <div class="t-left"><div class="t-dot normal"></div></div>
+          <div class="t-content">
+            <div class="t-title">3 — تكملة الباليتات (نقل بين محطات)</div>
+            <div class="t-desc">لو في كراتين ناقصة من محطة تانية</div>
+            <div class="scenario-block">
+              <div class="scenario s-info"><div class="s-label">نقل من محطة تانية</div><div class="s-text">بيتعمل طلب نقل → المحطة التانية بتوافق → الكراتين بتتحول → الباليتة بتكتمل</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="day-section">
+      <div class="day-label">التبريد والشحن</div>
+      <div class="timeline">
+        <div class="t-item">
+          <div class="t-left"><div class="t-dot normal"></div><div class="t-line"></div></div>
+          <div class="t-content">
+            <div class="t-title">4 — تبريد الباليتات</div>
+            <div class="t-desc">إدخال الباليتات للمخزن المبرد وتسجيل: المخزن، درجة الحرارة، وقت الدخول</div>
+            <div class="scenario-block">
+              <div class="scenario s-error"><div class="s-label">المخزن ممتلي</div><div class="s-text">النظام بيوضح السعة المتاحة لكل مخزن — لو ممتلي → ينتظر أو يحول لمخزن تاني</div></div>
+              <div class="scenario s-error"><div class="s-label">درجة حرارة غير طبيعية</div><div class="s-text">لو درجة الحرارة برّة النطاق المحدد للمنتج → تنبيه فوري للمدير ولا يسمح بالشحن حتى تتصحح</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="t-item">
+          <div class="t-left"><div class="t-dot normal"></div><div class="t-line"></div></div>
+          <div class="t-content">
+            <div class="t-title">5 — تأكيد استلام الباليتات</div>
+            <div class="t-desc">قبل الشحن — المسؤول بيأكد إن الباليتات اتسلمت وجاهزة. خطوة اعتماد إلزامية قبل بوليصة الشحن</div>
+          </div>
+        </div>
+        <div class="t-item">
+          <div class="t-left"><div class="t-dot normal"></div><div class="t-line"></div></div>
+          <div class="t-content">
+            <div class="t-title">6 — بوليصة الشحن</div>
+            <div class="t-desc">تجميع الباليتات في الحاوية وتسجيل: المستورد، الوجهة، رقم الحاوية، تاريخ الشحن</div>
+            <div class="scenario-block">
+              <div class="scenario s-warn"><div class="s-label">باليتة لم تتبرد كفاية</div><div class="s-text">النظام بيمنع إضافتها للشحنة ويوضح السبب — لازم تكمّل وقت التبريد أو موافقة المدير للاستثناء</div></div>
+              <div class="scenario s-warn"><div class="s-label">تغيير في الشحنة</div><div class="s-text">لو احتاج يضيف أو يشيل باليتة بعد إنشاء البوليصة → بيعمل تعديل بموافقة المدير مع توثيق السبب</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="t-item">
+          <div class="t-left"><div class="t-dot normal"></div></div>
+          <div class="t-content">
+            <div class="t-title">7 — طباعة بوليصة الشحن</div>
+            <div class="t-desc">بيتطبع PDF رسمي يحتوي: قائمة الباليتات، الأوزان، المواصفات، المستورد، الوجهة، توقيع المدير</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="day-section">
+      <div class="day-label">الصلاحيات</div>
+      <div class="permission-list">
+        <span class="perm yes">تكوين باليتات</span>
+        <span class="perm yes">طباعة استيكرات QR</span>
+        <span class="perm yes">تسجيل تبريد</span>
+        <span class="perm yes">إنشاء بوليصة شحن</span>
+        <span class="perm yes">تكملة باليتات</span>
+        <span class="perm yes">طباعة بوليصة</span>
+        <span class="perm no">تعديل بوليصة معتمدة (تحتاج مدير)</span>
+        <span class="perm no">استثناء من شرط التبريد</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- مدير المحطة -->
+  <div class="section" id="tab-manager">
+    <div class="role-header">
+      <div class="role-icon" style="background:#E6F1FB">🏭</div>
+      <div>
+        <div class="role-name">مدير المحطة</div>
+        <div class="role-desc">يراجع ويعتمد ويتابع الأداء اليومي للمحطة</div>
+      </div>
+    </div>
+
+    <div class="day-section">
+      <div class="day-label">أول النهار — متابعة الـ Dashboard</div>
+      <div class="kpi-grid">
+        <div class="kpi-card"><div class="kpi-val" style="color:#1D9E75">14 طن</div><div class="kpi-label">خام مستلم النهارده</div></div>
+        <div class="kpi-card"><div class="kpi-val" style="color:#185FA5">8 طن</div><div class="kpi-label">إنتاج جاهز للتصدير</div></div>
+        <div class="kpi-card"><div class="kpi-val" style="color:#BA7517">3 خطوط</div><div class="kpi-label">خطوط إنتاج شغالة</div></div>
+        <div class="kpi-card"><div class="kpi-val" style="color:#A32D2D">2 تنبيه</div><div class="kpi-label">تنبيهات تحتاج تدخل</div></div>
+      </div>
+    </div>
+
+    <div class="day-section">
+      <div class="day-label">دورة الاعتماد والمراجعة</div>
+      <div class="timeline">
+        <div class="t-item">
+          <div class="t-left"><div class="t-dot info"></div><div class="t-line"></div></div>
+          <div class="t-content">
+            <div class="t-title">مراجعة الاستلامات</div>
+            <div class="t-desc">بيراجع استلامات النهارده — بيعتمد أو بيطلب تصحيح</div>
+            <div class="scenario-block">
+              <div class="scenario s-warn"><div class="s-label">استلامة فيها تحذير</div><div class="s-text">جودة منخفضة أو وزن يدوي → بيراجعها ويقرر: يعتمد مع ملاحظة أو يطلب إعادة الفحص</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="t-item">
+          <div class="t-left"><div class="t-dot info"></div><div class="t-line"></div></div>
+          <div class="t-content">
+            <div class="t-title">تسعير الخام</div>
+            <div class="t-desc">بيسعّر الخام الوارد ويضيفه للمخزون — خطوة مش ممكن حد تاني يعملها</div>
+            <div class="scenario-block">
+              <div class="scenario s-info"><div class="s-label">تسعير جماعي</div><div class="s-text">ممكن يسعّر كل استلامات يوم معين دفعة واحدة بنفس السعر</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="t-item">
+          <div class="t-left"><div class="t-dot info"></div><div class="t-line"></div></div>
+          <div class="t-content">
+            <div class="t-title">اعتماد أوامر التشغيل والفرز</div>
+            <div class="t-desc">مراجعة نتائج الفرز — لو الفاقد عالي بيتحقق السبب ويعتمد أو يرفض</div>
+          </div>
+        </div>
+        <div class="t-item">
+          <div class="t-left"><div class="t-dot info"></div></div>
+          <div class="t-content">
+            <div class="t-title">اعتماد بوالص الشحن</div>
+            <div class="t-desc">آخر خطوة قبل الشحن الفعلي — بيراجع الباليتات والأوزان والمستورد ويوقع رقمياً</div>
+            <div class="scenario-block">
+              <div class="scenario s-error"><div class="s-label">رفض البوليصة</div><div class="s-text">لو في مشكلة → بيرجعها لموظف التصدير مع ملاحظات التصحيح</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="day-section">
+      <div class="day-label">الصلاحيات الكاملة</div>
+      <div class="permission-list">
+        <span class="perm yes">كل صلاحيات الموظفين</span>
+        <span class="perm yes">تسعير الخام</span>
+        <span class="perm yes">اعتماد المستندات</span>
+        <span class="perm yes">إلغاء أوامر التشغيل</span>
+        <span class="perm yes">استثناءات التبريد</span>
+        <span class="perm yes">تعديل مستندات معتمدة</span>
+        <span class="perm yes">إدارة إعدادات المحطة</span>
+        <span class="perm yes">كل التقارير</span>
+        <span class="perm no">إنشاء محطة جديدة</span>
+        <span class="perm no">تعديل بيانات محطة تانية</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Super Admin -->
+  <div class="section" id="tab-superadmin">
+    <div class="role-header">
+      <div class="role-icon" style="background:#E1F5EE">👑</div>
+      <div>
+        <div class="role-name">Super Admin</div>
+        <div class="role-desc">يدير كل المحطات والـ tenants — رؤية شاملة للنظام كله</div>
+      </div>
+    </div>
+
+    <div class="day-section">
+      <div class="day-label">إدارة المحطات (Tenants)</div>
+      <div class="timeline">
+        <div class="t-item">
+          <div class="t-left"><div class="t-dot normal"></div><div class="t-line"></div></div>
+          <div class="t-content">
+            <div class="t-title">إنشاء محطة جديدة</div>
+            <div class="t-desc">بيضيف محطة جديدة للنظام: الاسم، الموقع، الباقة، تعيين مدير. كل محطة بتاخد tenant_id فريد تلقائياً</div>
+          </div>
+        </div>
+        <div class="t-item">
+          <div class="t-left"><div class="t-dot normal"></div><div class="t-line"></div></div>
+          <div class="t-content">
+            <div class="t-title">إدارة الاشتراكات والباقات</div>
+            <div class="t-desc">تحديد عدد المستخدمين المسموح لكل محطة، الميزات المتاحة، تاريخ انتهاء الاشتراك</div>
+            <div class="scenario-block">
+              <div class="scenario s-warn"><div class="s-label">اشتراك منتهي</div><div class="s-text">المحطة بتتحول لـ read-only — مش ممكن تضيف مستندات جديدة لحد ما تجدد</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="t-item">
+          <div class="t-left"><div class="t-dot normal"></div></div>
+          <div class="t-content">
+            <div class="t-title">تقارير موحدة لكل المحطات</div>
+            <div class="t-desc">إجمالي الإنتاج، الشحنات، الإيرادات عبر كل المحطات — مقارنة الأداء بين المحطات</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="day-section">
+      <div class="day-label">الصلاحيات</div>
+      <div class="permission-list">
+        <span class="perm yes">إنشاء / تعطيل محطات</span>
+        <span class="perm yes">إدارة الاشتراكات</span>
+        <span class="perm yes">تعيين مدراء المحطات</span>
+        <span class="perm yes">تقارير موحدة</span>
+        <span class="perm yes">الدخول لأي محطة</span>
+        <span class="perm yes">إعادة تعيين كلمات السر</span>
+        <span class="perm yes">Audit Log كامل</span>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+function showTab(id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  event.target.classList.add('active');
+}
+</script>

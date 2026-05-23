@@ -52,20 +52,30 @@ class DatabaseSeeder extends Seeder
 
         $superAdmin->syncRoles(['super_admin']);
 
-        // Optional local test user.
-        User::query()->firstOrCreate(
-            ['email' => 'test@example.com'],
-            [
-                'name' => 'Test User',
-                'password' => Hash::make('password'),
-            ]
-        );
+        if (! app()->environment('production')) {
+            // Optional local test user.
+            User::query()->firstOrCreate(
+                ['email' => 'test@example.com'],
+                [
+                    'name' => 'Test User',
+                    'password' => Hash::make('password'),
+                ]
+            );
+        }
 
-        $this->call([
+        $seeders = [
             ContactSeeder::class,
             RawMaterialTypeSeeder::class,
-            ClientTestSeeder::class,
-            RawDeliveryOrderSeeder::class,
-        ]);
+            RolePermissionsSeeder::class,
+        ];
+
+        if (! app()->environment('production')) {
+            $seeders[] = ClientTestSeeder::class;
+            $seeders[] = PalletSeeder::class;
+            $seeders[] = RawDeliveryOrderSeeder::class;
+            $seeders[] = SettingsLookupSeeder::class;
+        }
+
+        $this->call($seeders);
     }
 }

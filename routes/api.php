@@ -11,8 +11,18 @@ use App\Http\Controllers\Api\Reception\GateInquiryController;
 use App\Http\Controllers\Api\Reception\RawReceiptController;
 use App\Http\Controllers\Api\Reception\ScaleNoteController;
 use App\Http\Controllers\Api\Reception\TransportCostDistributionController;
+use App\Http\Controllers\Api\Settings\BranchController;
 use App\Http\Controllers\Api\Settings\ContactController;
+use App\Http\Controllers\Api\Settings\FridgeController;
 use App\Http\Controllers\Api\Settings\PackhouseController;
+use App\Http\Controllers\Api\Settings\PayloadTemplateController;
+use App\Http\Controllers\Api\Settings\PalletTypeController;
+use App\Http\Controllers\Api\Settings\PermissionsController;
+use App\Http\Controllers\Api\Settings\ProductController;
+use App\Http\Controllers\Api\Settings\RawMaterialTypeController;
+use App\Http\Controllers\Api\Settings\ProductionLineController;
+use App\Http\Controllers\Api\Settings\ProductionStageController;
+use App\Http\Controllers\Api\Settings\ProductionSupervisorController;
 use App\Http\Controllers\Api\Reports\ReportController;
 use App\Http\Controllers\Api\Reports\ReceptionReportsController;
 use App\Http\Controllers\Api\Stock\StockController;
@@ -70,9 +80,45 @@ Route::middleware([\Illuminate\Auth\Middleware\Authenticate::using('sanctum'), '
 
     // Lookups for forms
     Route::prefix('settings')->group(function () {
+        Route::get('branches', [BranchController::class, 'index']);
+        Route::get('payloads', [PayloadTemplateController::class, 'index']);
+        Route::get('payloads/{resource}', [PayloadTemplateController::class, 'show']);
+        Route::get('raw-material-types', [RawMaterialTypeController::class, 'index']);
+        Route::post('raw-material-types', [RawMaterialTypeController::class, 'store']);
+        Route::put('raw-material-types/{rawMaterialType}', [RawMaterialTypeController::class, 'update']);
+        Route::delete('raw-material-types/{rawMaterialType}', [RawMaterialTypeController::class, 'destroy']);
+        Route::get('permissions', [PermissionsController::class, 'index']);
+        Route::put('permissions', [PermissionsController::class, 'update']);
+        Route::post('permissions/reset', [PermissionsController::class, 'reset']);
         Route::get('contacts', [ContactController::class, 'index']);
+        Route::post('contacts', [ContactController::class, 'store']);
+        Route::put('contacts/{contact}', [ContactController::class, 'update']);
+        Route::delete('contacts/{contact}', [ContactController::class, 'destroy']);
+        Route::get('fridges', [FridgeController::class, 'index']);
+        Route::post('fridges', [FridgeController::class, 'store']);
+        Route::put('fridges/{fridge}', [FridgeController::class, 'update']);
+        Route::delete('fridges/{fridge}', [FridgeController::class, 'destroy']);
         Route::get('packhouses', [PackhouseController::class, 'index']);
+        Route::post('packhouses', [PackhouseController::class, 'store']);
+        Route::put('packhouses/{packhouse}', [PackhouseController::class, 'update']);
+        Route::delete('packhouses/{packhouse}', [PackhouseController::class, 'destroy']);
+        Route::get('pallet-types', [PalletTypeController::class, 'index']);
+        Route::post('pallet-types', [PalletTypeController::class, 'store']);
+        Route::put('pallet-types/{palletType}', [PalletTypeController::class, 'update']);
+        Route::delete('pallet-types/{palletType}', [PalletTypeController::class, 'destroy']);
+        Route::get('products', [ProductController::class, 'index']);
+        Route::post('products', [ProductController::class, 'store']);
+        Route::put('products/{product}', [ProductController::class, 'update']);
+        Route::delete('products/{product}', [ProductController::class, 'destroy']);
+        Route::get('production-lines', [ProductionLineController::class, 'index']);
+        Route::post('production-lines', [ProductionLineController::class, 'store']);
+        Route::put('production-lines/{productionLine}', [ProductionLineController::class, 'update']);
+        Route::delete('production-lines/{productionLine}', [ProductionLineController::class, 'destroy']);
+        Route::get('production-stages', [ProductionStageController::class, 'index']);
+        Route::get('production-supervisors', [ProductionSupervisorController::class, 'index']);
     });
+
+    Route::get('contacts', [ContactController::class, 'index']);
 
     // Production
     Route::prefix('production')->group(function () {
@@ -81,14 +127,17 @@ Route::middleware([\Illuminate\Auth\Middleware\Authenticate::using('sanctum'), '
         Route::post('orders/{id}/pause', [ProductionOrderController::class, 'pause']);
         Route::post('orders/{id}/cancel', [ProductionOrderController::class, 'cancel']);
         Route::apiResource('sort-records', SortRecordController::class);
+        Route::post('sort-records/{sortRecord}/post', [SortRecordController::class, 'post']);
         Route::apiResource('attendance', AttendanceController::class);
     });
 
     // Export
     Route::prefix('export')->group(function () {
+        Route::get('pallets-available-orders', [PalletController::class, 'availableOrders']);
+        Route::get('pallets/available-orders', [PalletController::class, 'availableOrders']);
         Route::apiResource('pallets', PalletController::class);
-        Route::post('pallets/{id}/cooling', [PalletController::class, 'cooling']);
-        Route::post('pallets/{id}/confirm-receipt', [PalletController::class, 'confirmReceipt']);
+        Route::post('pallets/{pallet}/cooling', [PalletController::class, 'cooling']);
+        Route::post('pallets/{pallet}/confirm-receipt', [PalletController::class, 'confirmReceipt']);
         Route::apiResource('shipping-policies', ShippingPolicyController::class);
         Route::patch('shipping-policies/{id}/approve', [ShippingPolicyController::class, 'approve']);
     });
@@ -137,7 +186,10 @@ Route::middleware([\Illuminate\Auth\Middleware\Authenticate::using('sanctum'), '
     });
 
     Route::prefix('station')->middleware(['role:station_admin'])->group(function () {
+        Route::get('users', [\App\Http\Controllers\Api\Station\UserManagementController::class, 'index']);
         Route::post('users', [\App\Http\Controllers\Api\Station\UserManagementController::class, 'store']);
+        Route::put('users/{user}', [\App\Http\Controllers\Api\Station\UserManagementController::class, 'update']);
+        Route::delete('users/{user}', [\App\Http\Controllers\Api\Station\UserManagementController::class, 'destroy']);
     });
 });
 
