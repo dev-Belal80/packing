@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Api\Production;
 
 use App\Http\Controllers\Api\BaseApiController;
 use App\Http\Resources\Production\ProductionOrderResource;
+use App\Http\Resources\Reception\RawReceiptResource;
+use App\Models\RawReceipt;
 use App\Services\Production\ProductionOrderService;
 use Illuminate\Http\Request;
 
@@ -126,6 +128,29 @@ class ProductionOrderController extends BaseApiController
     {
         $model = $this->service->cancel($id);
         return $this->success(new ProductionOrderResource($model), 'cancelled');
+    }
+
+    public function availableRawReceipts(Request $request)
+    {
+        $query = RawReceipt::query()
+            ->with(['contact', 'rawMaterialType', 'packhouse'])
+            ->whereRaw('COALESCE(used_quantity, 0) + COALESCE((
+                select sum(target_qty_kg)
+                from production_orders
+                where production_orders.raw_receipt_id = raw_receipts.id
+                  and production_orders.deleted_at is null
+                                    and production_orders.status in (\'draft\', \'reserved\', \'dispatched\', \'paused\')
+            ), 0) < quantity_kg')
+            ->when($request->filled('packhouse_id'), fn ($q) => $q->where('packhouse_id', $request->integer('packhouse_id')))
+            ->when($request->filled('raw_material_type_id'), fn ($q) => $q->where('raw_material_type_id', $request->integer('raw_material_type_id')))
+            ->latest('id');
+
+        $paginator = $query->paginate($request->integer('per_page', 20));
+        $paginator->setCollection(
+            $paginator->getCollection()->map(fn ($model) => new RawReceiptResource($model))
+        );
+
+        return $this->paginated($paginator);
     }
 }
 

@@ -388,6 +388,7 @@ final class ApiAccess
             'App\\Http\\Controllers\\Api\\Reception\\RawDeliveryOrderController@update' => 'delivery-order',
             'App\\Http\\Controllers\\Api\\Reception\\RawDeliveryOrderController@destroy' => 'delivery-order',
             'App\\Http\\Controllers\\Api\\Reception\\RawDeliveryOrderController@confirm' => 'delivery-order',
+            'App\\Http\\Controllers\\Api\\Reception\\RawDeliveryOrderController@respond' => 'delivery-order',
 
             'App\\Http\\Controllers\\Api\\Settings\\PackhouseController@index' => 'settings',
             'App\\Http\\Controllers\\Api\\Settings\\PackhouseController@store' => 'settings',
@@ -431,6 +432,7 @@ final class ApiAccess
             'App\\Http\\Controllers\\Api\\Production\\ProductionOrderController@show' => 'production-order',
             'App\\Http\\Controllers\\Api\\Production\\ProductionOrderController@update' => 'production-order',
             'App\\Http\\Controllers\\Api\\Production\\ProductionOrderController@destroy' => 'production-order',
+            'App\\Http\\Controllers\\Api\\Production\\ProductionOrderController@availableRawReceipts' => 'production-order',
             'App\\Http\\Controllers\\Api\\Production\\ProductionOrderController@dispatch' => 'order.dispatch',
             'App\\Http\\Controllers\\Api\\Production\\ProductionOrderController@pause' => 'order.pause',
             'App\\Http\\Controllers\\Api\\Production\\ProductionOrderController@cancel' => 'order.cancel',

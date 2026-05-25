@@ -11,6 +11,7 @@ use App\Models\SortRecord;
 use App\Models\SortRecordLine;
 use App\Services\Export\PalletService;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 class PalletController extends BaseApiController
 {
@@ -47,6 +48,7 @@ class PalletController extends BaseApiController
     {
         $data = $this->normalizeCreatePayload($request);
         $data = $request->merge($data)->validate($this->rules());
+        $this->validateCartonAllocation($data);
 
         $model = $this->service->create($data);
         return $this->success(new PalletDetailsResource($model), 'Pallet created', 201);
@@ -65,6 +67,7 @@ class PalletController extends BaseApiController
         }
 
         $data = $request->validate($this->rules(true));
+        $this->validateCartonAllocation($data, $pallet);
 
         $model = $this->service->update($pallet, $data);
         return $this->success(new PalletDetailsResource($model), 'Updated');
@@ -240,6 +243,65 @@ class PalletController extends BaseApiController
         }
 
         return $data;
+    }
+
+    private function validateCartonAllocation(array $data, ?Pallet $pallet = null): void
+    {
+        if (empty($data['cartons_count'])) {
+            return;
+        }
+
+        $line = $this->resolveSortRecordLine($data, $pallet);
+        if (! $line || ! $line->productionOrder?->product) {
+            return;
+        }
+
+        $cartonWeight = (float) ($line->productionOrder->product->carton_weight_kg ?? 0);
+        if ($cartonWeight <= 0) {
+            return;
+        }
+
+        $availableCartons = (int) floor(((float) $line->line_total) / $cartonWeight);
+        $currentCartons = (int) Pallet::query()
+            ->where('sort_record_id', $line->sort_record_id)
+            ->where('production_order_id', $line->production_order_id)
+            ->when($pallet?->exists, fn ($query) => $query->whereKeyNot($pallet->getKey()))
+            ->sum('cartons_count');
+
+        $requestedCartons = (int) $data['cartons_count'];
+
+        if ($currentCartons + $requestedCartons <= $availableCartons) {
+            return;
+        }
+
+        throw ValidationException::withMessages([
+            'cartons_count' => 'إجمالي كراتين الباليتات لا يجوز أن يتجاوز الكمية المتاحة من سطر الفرزة.',
+        ]);
+    }
+
+    private function resolveSortRecordLine(array $data, ?Pallet $pallet = null): ?SortRecordLine
+    {
+        if (! empty($data['sort_record_line_id']) || ! empty($data['available_order_id'])) {
+            $lineId = $data['sort_record_line_id'] ?? $data['available_order_id'];
+
+            return SortRecordLine::query()
+                ->with(['sortRecord', 'productionOrder.product'])
+                ->find($lineId);
+        }
+
+        $sortRecordId = $data['sort_record_id'] ?? $pallet?->sort_record_id;
+        $productionOrderId = $data['production_order_id'] ?? $pallet?->production_order_id;
+
+        if (empty($sortRecordId) || empty($productionOrderId)) {
+            return null;
+        }
+
+        return SortRecordLine::query()
+            ->with(['sortRecord', 'productionOrder.product'])
+            ->where('sort_record_id', $sortRecordId)
+            ->where('production_order_id', $productionOrderId)
+            ->latest('id')
+            ->first();
     }
 
     private function resolveSortRecordLineFromPayload(array $data): ?SortRecordLine

@@ -90,6 +90,7 @@ class RawReceiptController extends BaseApiController
             'contact_id' => ['nullable', 'integer', 'exists:contacts,id'],
             'contact_role' => ['nullable', 'string', 'max:50'],
             'raw_material_type_id' => ['nullable', 'integer', 'exists:raw_material_types,id'],
+            'raw_delivery_order_id' => ['nullable', 'integer', 'exists:raw_delivery_orders,id'],
             'gate_inquiry_id' => ['nullable', 'integer', 'exists:gate_inquiries,id'],
             'scale_note_id' => ['nullable', 'integer', 'exists:scale_notes,id'],
             'vehicle_number' => ['nullable', 'string', 'max:50'],
@@ -118,7 +119,11 @@ class RawReceiptController extends BaseApiController
 
     public function index(Request $request)
     {
-        $paginator = $this->service->paginate($request->integer('per_page', 15));
+        $paginator = $this->service->paginate($request->integer('per_page', 15), $request->only([
+            'available_only',
+            'packhouse_id',
+            'raw_material_type_id',
+        ]));
         return $this->paginated($paginator);
     }
 

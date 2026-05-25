@@ -31,6 +31,7 @@ class RawDeliveryOrder extends Model
         'transport_total', 'transport_discount_qty', 'transport_price',
         'transport_discount_value',
         'status', 'created_by', 'confirmed_by', 'confirmed_at',
+        'supplier_response', 'supplier_responded_by', 'supplier_responded_at', 'supplier_notes',
     ];
 
     protected $casts = [

@@ -68,6 +68,9 @@ class RawReceiptsExport implements FromQuery, WithHeadings, WithMapping, WithSty
         $statusMap = [
             'pending' => 'معلق',
             'in_stock' => 'في المخزون',
+            'reserved' => 'محجوز',
+            'dispatched' => 'مصروف',
+            'consumed' => 'مستهلك',
             'rejected' => 'مرفوض',
             'priced' => 'مسعر',
             'approved' => 'معتمد',

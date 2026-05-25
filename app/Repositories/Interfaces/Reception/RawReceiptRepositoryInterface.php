@@ -4,7 +4,7 @@ namespace App\Repositories\Interfaces\Reception;
 
 interface RawReceiptRepositoryInterface
 {
-    public function paginate(int $perPage = 15);
+    public function paginate(int $perPage = 15, array $filters = []);
 
     public function findOrFail(int $id);
 

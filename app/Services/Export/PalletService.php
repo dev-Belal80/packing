@@ -5,8 +5,10 @@ namespace App\Services\Export;
 use App\Models\Pallet;
 use App\Models\PalletCooling;
 use App\Models\SortRecordLine;
+use App\Models\SortRecord;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class PalletService
 {
@@ -69,6 +71,21 @@ class PalletService
     public function create(array $data)
     {
         return DB::transaction(function () use ($data) {
+            // Validate sort record produced cartons
+            $sortRecord = SortRecord::findOrFail($data['sort_record_id']);
+            if ($sortRecord->status !== 'posted') {
+                throw ValidationException::withMessages(['sort_record_id' => 'الباليتة لازم تيجي من فرزة مرحّلة']);
+            }
+
+            $usedCartons = Pallet::where('sort_record_id', $sortRecord->id)
+                ->whereNotIn('status', ['cancelled'])
+                ->sum('cartons_count');
+
+            $availableCartons = (int) max(0, ($sortRecord->total_cartons_produced ?? 0) - $usedCartons);
+            if (($data['cartons_count'] ?? 0) > $availableCartons) {
+                throw ValidationException::withMessages(['cartons_count' => "الكراتين المطلوبة ({$data['cartons_count']}) أكبر من المتاح ({$availableCartons})"]);
+            }
+
             $pallet = new Pallet($data);
             $pallet->save();
 

@@ -24,6 +24,7 @@ use App\Http\Controllers\Api\Settings\ProductionLineController;
 use App\Http\Controllers\Api\Settings\ProductionStageController;
 use App\Http\Controllers\Api\Settings\ProductionSupervisorController;
 use App\Http\Controllers\Api\Reports\ReportController;
+use App\Http\Controllers\Api\Reports\StockReportController;
 use App\Http\Controllers\Api\Reports\ReceptionReportsController;
 use App\Http\Controllers\Api\Stock\StockController;
 use Illuminate\Support\Facades\Route;
@@ -70,6 +71,7 @@ Route::middleware([\Illuminate\Auth\Middleware\Authenticate::using('sanctum'), '
         Route::apiResource('delivery-orders', RawDeliveryOrderController::class)
             ->parameters(['delivery-orders' => 'rawDeliveryOrder']);
         Route::post('delivery-orders/{rawDeliveryOrder}/confirm', [RawDeliveryOrderController::class, 'confirm']);
+        Route::post('delivery-orders/{rawDeliveryOrder}/respond', [RawDeliveryOrderController::class, 'respond']);
         Route::apiResource('gate-inquiries', GateInquiryController::class);
         Route::apiResource('scale-notes', ScaleNoteController::class);
         Route::apiResource('raw-receipts', RawReceiptController::class);
@@ -122,6 +124,7 @@ Route::middleware([\Illuminate\Auth\Middleware\Authenticate::using('sanctum'), '
 
     // Production
     Route::prefix('production')->group(function () {
+        Route::get('raw-receipts/available', [ProductionOrderController::class, 'availableRawReceipts']);
         Route::apiResource('orders', ProductionOrderController::class);
         Route::post('orders/{id}/dispatch', [ProductionOrderController::class, 'dispatch']);
         Route::post('orders/{id}/pause', [ProductionOrderController::class, 'pause']);
@@ -156,6 +159,7 @@ Route::middleware([\Illuminate\Auth\Middleware\Authenticate::using('sanctum'), '
         Route::get('production-stats', [ReportController::class, 'productionStats']);
         Route::get('pallet-tracking/{id}', [ReportController::class, 'palletTracking']);
         Route::get('shipments', [ReportController::class, 'shipments']);
+        Route::get('stock-balance/{id}', [StockReportController::class, 'stockBalance']);
 
         // Reception Reports (PDF + Excel)
         Route::prefix('reception')->group(function () {

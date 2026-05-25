@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Spatie\Activitylog\LogOptions;
 use Spatie\Activitylog\Traits\LogsActivity;
+use Illuminate\Validation\ValidationException;
 
 class RawReceipt extends Model
 {
@@ -29,6 +30,8 @@ class RawReceipt extends Model
         'quantity_kg', 'quality_result', 'quality_notes',
         'is_partial', 'has_weight_dispute', 'weight_dispute_notes',
         'price_per_kg', 'total_price', 'transport_cost',
+        'reserved_qty', 'dispatched_qty', 'consumed_qty',
+        'raw_delivery_order_id',
         'approval_status', 'approved_by', 'approved_at', 'rejection_reason',
     ];
 
@@ -46,6 +49,9 @@ class RawReceipt extends Model
         'produced_quantity' => 'decimal:3',
         'sorting_and_loss' => 'decimal:3',
         'used_quantity' => 'decimal:3',
+        'reserved_qty' => 'decimal:3',
+        'dispatched_qty' => 'decimal:3',
+        'consumed_qty' => 'decimal:3',
         'quantity_kg' => 'decimal:3',
         'price_per_kg' => 'decimal:4',
         'total_price' => 'decimal:2',
@@ -104,6 +110,11 @@ class RawReceipt extends Model
         return $this->hasMany(StockTransaction::class);
     }
 
+    public function rawDeliveryOrder(): BelongsTo
+    {
+        return $this->belongsTo(RawDeliveryOrder::class, 'raw_delivery_order_id');
+    }
+
     protected static function boot(): void
     {
         parent::boot();
@@ -145,13 +156,80 @@ class RawReceipt extends Model
 
     public function availableQty(): float
     {
-        $dispatched = (float) $this->productionOrderPickings()->sum('dispatched_qty_kg');
-        return max(0.0, (float) $this->quantity_kg - $dispatched);
+        // الكمية المتاحة = الإجمالي - المحجوز - المصروف - المستهلك
+        $reserved = (float) ($this->reserved_qty ?? 0);
+        $dispatched = (float) ($this->dispatched_qty ?? 0);
+        $consumed = (float) ($this->consumed_qty ?? 0);
+
+        return max(0.0, (float) $this->quantity_kg - $reserved - $dispatched - $consumed);
+    }
+
+    public function reservedQty(): float
+    {
+        return (float) ($this->reserved_qty ?? 0);
+    }
+
+    public function dispatchedQty(): float
+    {
+        return (float) ($this->dispatched_qty ?? 0);
+    }
+
+    public function consumedQty(): float
+    {
+        return (float) ($this->consumed_qty ?? 0);
+    }
+
+    public function reserve(float $qty): void
+    {
+        if ($qty > $this->availableQty()) {
+            throw ValidationException::withMessages([
+                'raw_receipt_id' => "الكمية المطلوبة ({$qty}) أكبر من المتاح ({$this->availableQty()})",
+            ]);
+        }
+
+        $this->increment('reserved_qty', $qty);
+    }
+
+    public function releaseReservation(float $qty): void
+    {
+        $this->decrement('reserved_qty', min($qty, (float) ($this->reserved_qty ?? 0)));
+    }
+
+    public function dispatch(float $qty): void
+    {
+        // decrement reserved, increment dispatched
+        $this->decrement('reserved_qty', min($qty, (float) ($this->reserved_qty ?? 0)));
+        $this->increment('dispatched_qty', $qty);
+    }
+
+    public function consume(float $qty): void
+    {
+        $this->decrement('dispatched_qty', min($qty, (float) ($this->dispatched_qty ?? 0)));
+        $this->increment('consumed_qty', $qty);
+
+        $total = (float) ($this->reserved_qty ?? 0) + (float) ($this->dispatched_qty ?? 0);
+        if ($total <= 0 && (float) ($this->consumed_qty ?? 0) >= (float) ($this->quantity_kg ?? 0) * 0.99) {
+            $this->update(['status' => 'consumed']);
+        }
+    }
+
+    public function activeProductionOrderQty(): float
+    {
+        return (float) $this->productionOrders()
+            ->whereIn('status', ['draft', 'reserved', 'dispatched', 'paused'])
+            ->sum('target_qty_kg');
     }
 
     public function getAvailableQtyAttribute(): float
     {
         return $this->availableQty();
+    }
+
+    public function getUsedQuantityAttribute(): float
+    {
+        // backward compatibility: previous code relied on used_quantity
+        // interpret as dispatched quantity (quantity already taken out for production)
+        return (float) ($this->dispatched_qty ?? 0);
     }
 }
 

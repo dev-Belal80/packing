@@ -3,6 +3,7 @@
 use App\Models\Packhouse;
 use App\Models\ProductionLine;
 use App\Models\ProductionOrder;
+use App\Models\StockTransaction;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -57,6 +58,8 @@ it('creates a sort record with a single line and totals', function (): void {
     $response = $this->withHeader('Authorization', 'Bearer '.$token)
         ->postJson('/api/production/sort-records', $payload);
 
+    // debug removed
+
     $response->assertCreated();
     $response->assertJsonPath('data.status', 'draft');
     $response->assertJsonCount(1, 'data.lines');
@@ -110,4 +113,91 @@ it('posts a sort record and blocks updates', function (): void {
         ]);
 
     $update->assertStatus(403);
+});
+
+it('requires a production order on sort record lines', function (): void {
+    $token = productionAuthToken();
+
+    $packhouseId = Packhouse::query()->value('id');
+    $productionLineId = ProductionLine::query()->value('id');
+
+    $response = $this->withHeader('Authorization', 'Bearer '.$token)
+        ->postJson('/api/production/sort-records', [
+            'packhouse_id' => $packhouseId,
+            'sort_date' => now()->toDateString(),
+            'lines' => [
+                [
+                    'raw_type' => 'Orange',
+                    'production_line_id' => $productionLineId,
+                    'grade_a_kg' => 1.0,
+                    'grade_b_kg' => 1.0,
+                    'grade_c_kg' => 0.0,
+                    'waste_kg' => 0.0,
+                    'returned_kg' => 0.0,
+                ],
+            ],
+        ]);
+
+    $response->assertStatus(422);
+    $response->assertJsonValidationErrors(['lines.0.production_order_id']);
+});
+
+it('creates stock transactions when posting a sort record', function (): void {
+    $token = productionAuthToken();
+
+    $packhouseId = Packhouse::query()->value('id');
+    $productionLineId = ProductionLine::query()->value('id');
+    $productionOrderId = ProductionOrder::query()->value('id');
+
+    $create = $this->withHeader('Authorization', 'Bearer '.$token)
+        ->postJson('/api/production/sort-records', [
+            'packhouse_id' => $packhouseId,
+            'sort_date' => now()->toDateString(),
+            'lines' => [
+                [
+                    'raw_type' => 'Orange',
+                    'production_line_id' => $productionLineId,
+                    'production_order_id' => $productionOrderId,
+                    'grade_a_kg' => 1.0,
+                    'grade_b_kg' => 1.5,
+                    'grade_c_kg' => 0.5,
+                    'waste_kg' => 0.25,
+                    'returned_kg' => 0.0,
+                ],
+            ],
+        ]);
+
+    $create->assertCreated();
+    $sortRecordId = $create->json('data.id');
+
+    $beforeCount = StockTransaction::query()->where('production_order_id', $productionOrderId)->count();
+
+    $post = $this->withHeader('Authorization', 'Bearer '.$token)
+        ->postJson("/api/production/sort-records/{$sortRecordId}/post");
+
+    $post->assertOk();
+
+    $transactions = StockTransaction::query()
+        ->where('production_order_id', $productionOrderId)
+        ->orderBy('id')
+        ->get();
+
+    expect($transactions)->toHaveCount($beforeCount + 3);
+
+    $created = $transactions->slice($beforeCount)->values();
+
+    expect($created[0]->type)->toBe('out');
+    expect($created[0]->reason)->toBe('sort_consumption');
+    expect($created[0]->sort_record_line_id)->not()->toBeNull();
+    expect((float) $created[0]->quantity_kg)->toBe(3.25);
+
+    expect($created[1]->type)->toBe('in');
+    expect($created[1]->reason)->toBe('sort_finished_goods');
+    expect($created[1]->sort_record_line_id)->not()->toBeNull();
+    expect((float) $created[1]->quantity_kg)->toBe(3.0);
+
+    expect($created[2]->type)->toBe('out');
+    expect($created[2]->reason)->toBe('sort_waste');
+    expect($created[2]->sort_record_line_id)->not()->toBeNull();
+    expect((float) $created[2]->quantity_kg)->toBe(0.25);
 });

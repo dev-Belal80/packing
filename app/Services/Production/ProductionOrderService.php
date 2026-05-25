@@ -37,7 +37,7 @@ class ProductionOrderService
 
     public function dispatch(int $id)
     {
-        return $this->repo->update($id, ['status' => 'dispatched']);
+        return $this->repo->dispatch($id);
     }
 
     public function pause(int $id)
@@ -47,7 +47,7 @@ class ProductionOrderService
 
     public function cancel(int $id)
     {
-        return $this->repo->update($id, ['status' => 'cancelled']);
+        return $this->repo->cancel($id);
     }
 }
 

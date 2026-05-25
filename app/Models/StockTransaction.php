@@ -13,8 +13,8 @@ class StockTransaction extends Model
     use HasFactory, SoftDeletes, BelongsToTenant;
 
     protected $fillable = [
-        'type', 'reason', 'raw_receipt_id', 'production_order_id',
-        'shipping_policy_id', 'quantity_kg', 'unit_cost', 'total_cost', 'created_by',
+        'type', 'reason', 'raw_receipt_id', 'production_order_id', 'sort_record_line_id',
+        'shipping_policy_id', 'sort_record_id', 'quantity_kg', 'unit_cost', 'total_cost', 'created_by',
     ];
 
     protected $casts = ['quantity_kg' => 'decimal:3', 'unit_cost' => 'decimal:4', 'total_cost' => 'decimal:2'];
@@ -27,6 +27,16 @@ class StockTransaction extends Model
     public function productionOrder(): BelongsTo
     {
         return $this->belongsTo(ProductionOrder::class);
+    }
+
+    public function sortRecordLine(): BelongsTo
+    {
+        return $this->belongsTo(SortRecordLine::class);
+    }
+
+    public function sortRecord(): BelongsTo
+    {
+        return $this->belongsTo(SortRecord::class);
     }
 
     public function shippingPolicy(): BelongsTo

@@ -148,4 +148,24 @@ class RawDeliveryOrderController extends BaseApiController
             'تم تأكيد أمر التوريد'
         );
     }
+
+    public function respond(Request $request, RawDeliveryOrder $rawDeliveryOrder)
+    {
+        $data = $request->validate([
+            'response' => ['required', 'in:accepted,rejected'],
+            'notes' => ['nullable', 'string'],
+        ]);
+
+        $rawDeliveryOrder->update([
+            'supplier_response' => $data['response'],
+            'supplier_responded_by' => Auth::id(),
+            'supplier_responded_at' => now(),
+            'supplier_notes' => $data['notes'] ?? null,
+        ]);
+
+        return $this->success(
+            $this->reloadOrder($rawDeliveryOrder),
+            'تم تسجيل رد المورد'
+        );
+    }
 }

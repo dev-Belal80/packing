@@ -12,6 +12,10 @@ interface ProductionOrderRepositoryInterface
 
     public function update(int $id, array $data);
 
+    public function dispatch(int $id);
+
+    public function cancel(int $id);
+
     public function delete(int $id): void;
 }
 

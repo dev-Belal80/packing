@@ -833,6 +833,31 @@
           }
         },
         {
+          "name": "Available Raw Receipts for Production",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Accept", "value": "application/json" }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{BEARER_TOKEN}}", "type": "string" }
+              ]
+            },
+            "url": {
+              "raw": "{{api_base}}/api/production/raw-receipts/available?per_page=20&packhouse_id={{packhouse_id}}&raw_material_type_id={{raw_material_type_id}}",
+              "host": ["{{api_base}}"],
+              "path": ["api", "production", "raw-receipts", "available"],
+              "query": [
+                { "key": "per_page", "value": "20" },
+                { "key": "packhouse_id", "value": "{{packhouse_id}}" },
+                { "key": "raw_material_type_id", "value": "{{raw_material_type_id}}" }
+              ]
+            }
+          }
+        },
+        {
           "name": "Create Production Order",
           "request": {
             "method": "POST",
@@ -1463,7 +1488,7 @@
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"packhouse_id\": \"{{packhouse_id}}\",\n  \"contact_id\": \"{{contact_id}}\",\n  \"contact_role\": \"supplier\",\n  \"raw_material_type_id\": \"{{raw_material_type_id}}\",\n  \"gate_inquiry_id\": \"{{gate_inquiry_id}}\",\n  \"scale_note_id\": \"{{scale_note_id}}\",\n  \"boxes_count\": 25,\n  \"quantity_kg\": 500.000,\n  \"quality_result\": \"pass\",\n  \"quality_notes\": \"Example receipt\",\n  \"is_partial\": false,\n  \"has_weight_dispute\": false,\n  \"transport_cost\": 0,\n  \"status\": \"pending\",\n  \"approval_status\": \"pending\"\n}"
+              "raw": "{\n  \"packhouse_id\": \"{{packhouse_id}}\",\n  \"contact_id\": \"{{contact_id}}\",\n  \"contact_role\": \"supplier\",\n  \"raw_material_type_id\": \"{{raw_material_type_id}}\",\n  \"gate_inquiry_id\": \"{{gate_inquiry_id}}\",\n  \"scale_note_id\": \"{{scale_note_id}}\",\n  \"raw_delivery_order_id\": \"{{raw_delivery_order_id}}\",\n  \"boxes_count\": 25,\n  \"quantity_kg\": 500.000,\n  \"quality_result\": \"pass\",\n  \"quality_notes\": \"Example receipt\",\n  \"is_partial\": false,\n  \"has_weight_dispute\": false,\n  \"transport_cost\": 0,\n  \"status\": \"pending\",\n  \"approval_status\": \"pending\"\n}"
             },
             "url": {
               "raw": "{{api_base}}/api/reception/raw-receipts",
@@ -1474,6 +1499,30 @@
         },
         {
           "name": "Show Raw Receipt",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('response has lifecycle fields', function () {",
+                  "  var json = pm.response.json();",
+                  "  pm.expect(json.data).to.have.property('reserved_qty');",
+                  "  pm.expect(json.data).to.have.property('dispatched_qty');",
+                  "  pm.expect(json.data).to.have.property('consumed_qty');",
+                  "});",
+                  "pm.test('production order includes raw lifecycle counters', function () {",
+                  "  var json = pm.response.json();",
+                  "  if (json.data.raw_receipt) {",
+                  "    pm.expect(json.data).to.have.property('raw_reserved_qty');",
+                  "    pm.expect(json.data).to.have.property('raw_dispatched_qty');",
+                  "    pm.expect(json.data).to.have.property('raw_consumed_qty');",
+                  "  }",
+                  "});"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "GET",
             "header": [
@@ -1795,6 +1844,31 @@
               "raw": "{{api_base}}/api/reception/delivery-orders/{{raw_delivery_order_id}}/confirm",
               "host": ["{{api_base}}"],
               "path": ["api", "reception", "delivery-orders", "{{raw_delivery_order_id}}", "confirm"]
+            }
+          }
+        },
+        {
+          "name": "Delivery Orders - Respond",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Accept", "value": "application/json" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                { "key": "token", "value": "{{BEARER_TOKEN}}", "type": "string" }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"response\": \"accepted\",\n  \"notes\": \"Supplier accepts order\"\n}"
+            },
+            "url": {
+              "raw": "{{api_base}}/api/reception/delivery-orders/{{raw_delivery_order_id}}/respond",
+              "host": ["{{api_base}}"],
+              "path": ["api", "reception", "delivery-orders", "{{raw_delivery_order_id}}", "respond"]
             }
           }
         }

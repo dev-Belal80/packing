@@ -121,3 +121,30 @@ it('returns available posted sort lines for pallet selection', function (): void
 
     expect($response->json('data.0.available_cartons'))->toBeGreaterThan(0);
 });
+
+it('rejects pallet cartons that exceed the available sort line quantity', function (): void {
+    $token = stationAdminToken();
+
+    $availableResponse = $this->withHeader('Authorization', 'Bearer '.$token)
+        ->getJson('/api/export/pallets/available-orders?per_page=10');
+
+    $availableResponse->assertOk();
+
+    $availableLine = collect($availableResponse->json('data'))
+        ->first(fn (array $item): bool => (int) ($item['available_cartons'] ?? 0) > 0);
+
+    expect($availableLine)->not->toBeNull();
+
+    $palletTypeId = PalletType::query()->value('id');
+    $response = $this->withHeader('Authorization', 'Bearer '.$token)
+        ->postJson('/api/export/pallets', [
+            'available_order_id' => $availableLine['available_order_id'],
+            'pallet_type_id' => $palletTypeId,
+            'cartons_count' => ((int) $availableLine['available_cartons']) + 1,
+            'actual_weight' => 600,
+            'net_weight' => 594.5,
+        ]);
+
+    $response->assertStatus(422);
+    $response->assertJsonValidationErrors(['cartons_count']);
+});
